@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { courses, getLesson } from '../content'
-import { generateLessonExercises, spellFromWord, letterPool } from './exercise-gen'
+import {
+  errorCorrectionExercise,
+  generateLessonExercises,
+  letterPool,
+  reorderDictationExercise,
+  spellFromWord,
+} from './exercise-gen'
 
 const ru = courses.ru
 const lesson = getLesson(ru, 'u2s1l1') // Drinks: 5 short words, sentences, a pattern
@@ -17,6 +23,66 @@ describe('spellFromWord', () => {
   it('marks audio variants with ttsText', () => {
     const ex = spellFromWord('чай', 'tea', letterPool(ru), { audio: true })
     expect(ex.kind === 'spell' && ex.ttsText).toBe('чай')
+  })
+})
+
+describe('errorCorrectionExercise', () => {
+  // Real vocab word with alternative forms so the swap is guaranteed to differ.
+  const vocab = ru.vocab.find((v) => (v.forms ?? []).length > 0)!
+  const sentence = {
+    text: `${vocab.lemma} тут?`,
+    translation: 'x here?',
+    vocabIds: [vocab.id],
+  }
+
+  it('points errorIndex at the token that was swapped and keeps the rest intact', () => {
+    for (let i = 0; i < 20; i++) {
+      const ex = errorCorrectionExercise(ru, sentence)
+      if (ex.kind !== 'errorCorrection') throw new Error('wrong kind')
+      const original = sentence.text.split(/\s+/)
+      expect(ex.tokens).toHaveLength(original.length)
+      expect(ex.errorIndex).toBe(0) // only token 0 matches the sentence vocab
+      expect(ex.correctToken).toBe(original[0])
+      expect(ex.tokens[0]).not.toBe(original[0])
+      expect(ex.tokens.slice(1)).toEqual(original.slice(1))
+    }
+  })
+
+  it('preserves trailing punctuation on the swapped token', () => {
+    const punct = { text: `Где ${vocab.lemma}?`, translation: 'where?', vocabIds: [vocab.id] }
+    for (let i = 0; i < 20; i++) {
+      const ex = errorCorrectionExercise(ru, punct)
+      if (ex.kind !== 'errorCorrection') throw new Error('wrong kind')
+      expect(ex.errorIndex).toBe(1)
+      expect(ex.tokens[1].endsWith('?')).toBe(true)
+    }
+  })
+})
+
+describe('reorderDictationExercise', () => {
+  const [a, b] = ru.vocab.filter((v) => !v.lemma.includes(' '))
+  const sentence = { text: `${a.lemma} ${b.lemma}!`, translation: 'ab', vocabIds: [a.id, b.id] }
+
+  it('answer chips reproduce the sentence without punctuation, in order', () => {
+    const ex = reorderDictationExercise(ru, sentence)
+    if (ex.kind !== 'reorderDictation') throw new Error('wrong kind')
+    expect(ex.answerChips).toEqual([a.lemma, b.lemma])
+    expect(ex.sentence).toBe(sentence.text)
+  })
+
+  it('distractor chips never duplicate an answer chip', () => {
+    for (let i = 0; i < 20; i++) {
+      const ex = reorderDictationExercise(ru, sentence)
+      if (ex.kind !== 'reorderDictation') throw new Error('wrong kind')
+      const answers = new Set(ex.answerChips.map((c) => c.toLowerCase()))
+      for (const d of ex.distractorChips) expect(answers.has(d.toLowerCase())).toBe(false)
+    }
+  })
+
+  it('adds at most 2 distractors', () => {
+    const ex = reorderDictationExercise(ru, sentence)
+    if (ex.kind !== 'reorderDictation') throw new Error('wrong kind')
+    expect(ex.distractorChips.length).toBeLessThanOrEqual(2)
   })
 })
 

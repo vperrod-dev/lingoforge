@@ -36,6 +36,7 @@ Rules:
 - Pronunciation should help an English speaker approximate the sound`
 
   const result = await generateJSON<TopicVocabResponse>(prompt)
+  if (!result.vocab) console.warn('Ollama topic-vocab response missing "vocab" — using empty list')
   return result.vocab ?? []
 }
 

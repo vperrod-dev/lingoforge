@@ -61,7 +61,10 @@ export async function generateJSON<T>(prompt: string, system?: string): Promise<
     return JSON.parse(raw) as T
   } catch {
     const match = raw.match(/\{[\s\S]*\}/)
-    if (match) return JSON.parse(match[0]) as T
+    if (match) {
+      console.warn(`Ollama returned malformed JSON, recovered via brace-extraction fallback: ${raw.slice(0, 200)}`)
+      return JSON.parse(match[0]) as T
+    }
     throw new Error(`Failed to parse Ollama JSON: ${raw.slice(0, 200)}`)
   }
 }
@@ -89,7 +92,10 @@ export async function generateVision<T>(prompt: string, imageBase64: string, sys
     return JSON.parse(raw) as T
   } catch {
     const match = raw.match(/\{[\s\S]*\}/)
-    if (match) return JSON.parse(match[0]) as T
+    if (match) {
+      console.warn(`Ollama vision returned malformed JSON, recovered via brace-extraction fallback: ${raw.slice(0, 200)}`)
+      return JSON.parse(match[0]) as T
+    }
     throw new Error(`Failed to parse vision JSON: ${raw.slice(0, 200)}`)
   }
 }

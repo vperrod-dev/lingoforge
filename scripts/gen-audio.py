@@ -6,6 +6,14 @@ Files saved to public/audio/{lang}/{safe_text}.mp3
   safe_text = text with '/' replaced by '-' (only char unsafe in filenames)
 tts.ts uses the same safeText() transformation, no percent-encoding.
 When the browser fetches the URL, it auto-encodes Unicode → server decodes → matches file.
+
+Coverage:
+  - course vocab lemmas + inflected forms (from courses/*.ts)
+  - Russian alphabet letters + example words (from ru-alphabet.ts)
+  - phrasebook phrases (from phrasebook.ts) — the 🔊 button on each phrase
+  - reading glossary words (from readings.ts) — inline tap-to-hear fallback for
+    surface forms not in the course vocab
+  - reading dialogue turns (from readings.ts) — the per-line 🔊 in a dialogue
 """
 
 import asyncio
@@ -31,6 +39,8 @@ def safe_filename(text: str) -> str:
     return text.replace("/", "-").replace("\\", "-")
 
 
+# ---- course vocab / alphabet extractors (existing) ----
+
 def extract_lemmas(ts_path: str) -> list[str]:
     text = Path(ts_path).read_text(encoding="utf-8")
     return re.findall(r"lemma:\s*['\"]([^'\"]+)['\"]", text)
@@ -51,6 +61,42 @@ def extract_alphabet(ts_path: str) -> tuple[list[str], list[str]]:
     lowers = re.findall(r"lower:\s*['\"]([^'\"]+)['\"]", text)
     words = re.findall(r"word:\s*['\"]([^'\"]+)['\"]", text)
     return list(set(letters + lowers)), words
+
+
+# ---- reading / phrasebook extractors (new) ----
+
+def lang_blocks(ts_path: str) -> dict[str, str]:
+    """Split a `Record<CourseId, ...>` source file into per-language text blocks."""
+    text = Path(ts_path).read_text(encoding="utf-8")
+    headers = [(m.group(1), m.start()) for m in re.finditer(r"\n\s*(ru|es):\s*\[", text)]
+    blocks: dict[str, str] = {}
+    for i, (lang, pos) in enumerate(headers):
+        begin = text.find("[", pos)
+        end = headers[i + 1][1] if i + 1 < len(headers) else len(text)
+        blocks[lang] = text[begin:end]
+    return blocks
+
+
+def _unescape(s: str) -> str:
+    return s.replace("\\'", "'").replace("\\\\", "\\")
+
+
+def extract_phrases(block: str) -> list[str]:
+    """Phrase text (from phrasebook.ts): `text: '...'` — handles \\' escapes ('Let\\'s go.')."""
+    return [_unescape(m) for m in re.findall(r"text:\s*'((?:\\.|[^'\\])+)'", block)]
+
+
+def extract_dialogue_turns(block: str) -> list[str]:
+    """Dialogue turn text (from readings.ts): `text: '...'` inside a turn."""
+    return extract_phrases(block)
+
+
+def extract_glossary(block: str) -> list[str]:
+    """Glossary surface words (from readings.ts): `glossary: { 'word': 'meaning', ... }`."""
+    keys: list[str] = []
+    for gb in re.findall(r"glossary:\s*\{([^}]*)\}", block):
+        keys.extend(re.findall(r"'([^']+)':", gb))
+    return keys
 
 
 async def generate(text: str, voice: str, out_dir: Path) -> None:
@@ -87,15 +133,32 @@ async def main() -> None:
         + extract_alphabet("src/content/courses/ru-alphabet.ts")[0]
         + extract_alphabet("src/content/courses/ru-alphabet.ts")[1]
     ))
-    print(f"Russian: {len(ru_texts)} unique texts")
+    print(f"Russian (vocab + alphabet): {len(ru_texts)} unique texts")
     await generate_batch(ru_texts, "ru")
 
     es_texts = list(dict.fromkeys(
         extract_lemmas("src/content/courses/es.ts")
         + extract_forms("src/content/courses/es.ts")
     ))
-    print(f"\nSpanish: {len(es_texts)} unique texts")
+    print(f"\nSpanish (vocab): {len(es_texts)} unique texts")
     await generate_batch(es_texts, "es")
+
+    # Phrasebook phrases (per-language)
+    pb_blocks = lang_blocks("src/content/phrasebook.ts")
+    for lang, block in pb_blocks.items():
+        texts = list(dict.fromkeys(extract_phrases(block)))
+        print(f"\n{lang} phrasebook phrases: {len(texts)}")
+        await generate_batch(texts, lang)
+
+    # Reading glossary words + dialogue turns (per-language)
+    rd_blocks = lang_blocks("src/content/readings.ts")
+    for lang, block in rd_blocks.items():
+        glossary = list(dict.fromkeys(extract_glossary(block)))
+        turns = list(dict.fromkeys(extract_dialogue_turns(block)))
+        print(f"\n{lang} reading glossary words: {len(glossary)}")
+        await generate_batch(glossary, lang)
+        print(f"{lang} reading dialogue turns: {len(turns)}")
+        await generate_batch(turns, lang)
 
     print(f"\nDone. Files in {OUT_DIR}/")
 

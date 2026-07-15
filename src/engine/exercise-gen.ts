@@ -301,7 +301,7 @@ function splitPunctuation(token: string): { core: string; suffix: string } {
   return { core: match?.[1] ?? token, suffix: match?.[2] ?? '' }
 }
 
-function errorCorrectionExercise(
+export function errorCorrectionExercise(
   course: Course,
   sentence: { text: string; translation: string; vocabIds: string[] },
 ): ExerciseInstance {
@@ -351,7 +351,7 @@ function errorCorrectionExercise(
   }
 }
 
-function reorderDictationExercise(
+export function reorderDictationExercise(
   course: Course,
   sentence: { text: string; translation: string; vocabIds: string[] },
 ): ExerciseInstance {

@@ -51,6 +51,9 @@ Rules:
 - Include polite/formal variants where relevant`
 
   const result = await generateJSON<ScenarioData>(prompt)
+  for (const field of ['vocab', 'phrases', 'dialogue'] as const) {
+    if (!result[field]) console.warn(`Ollama scenario response missing "${field}" — using empty list`)
+  }
   return {
     title: result.title ?? situation,
     culturalTip: result.culturalTip ?? '',
@@ -107,7 +110,7 @@ export function scenarioToExercises(
   for (const line of userLines) {
     const tokens = line.line.split(/\s+/)
     if (tokens.length < 2) continue
-    const blankIndex = Math.floor(Math.random() * tokens.length)
+    const blankIndex = sample(tokens.map((_, i) => i), 1)[0]
     exercises.push({
       kind: 'cloze',
       tokens,

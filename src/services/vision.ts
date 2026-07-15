@@ -41,6 +41,7 @@ Rules:
 - Example sentences should be simple A2 level`
 
   const result = await generateVision<VisionResponse>(prompt, imageBase64)
+  if (!result.objects) console.warn('Ollama vision response missing "objects" — using empty list')
   return (result.objects ?? []).map((o) => ({
     nameEn: o.name_en,
     nameTarget: o.name_target,

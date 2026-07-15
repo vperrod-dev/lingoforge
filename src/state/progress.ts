@@ -41,6 +41,21 @@ const emptyCourseProgress = (): CourseProgress => ({
   srsItems: {},
 })
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/** Shape check for imported backups — untrusted input, reject anything malformed. */
+export function isProgressData(v: unknown): v is ProgressData {
+  if (!isPlainObject(v)) return false
+  if (typeof v.xp !== 'number' || typeof v.dailyGoalMinutes !== 'number') return false
+  if (typeof v.activeCourse !== 'string' || !(v.activeCourse in courses)) return false
+  if (!isPlainObject(v.dailyLog) || !isPlainObject(v.badges) || !isPlainObject(v.courses)) return false
+  return Object.values(v.courses).every(
+    (c) => isPlainObject(c) && isPlainObject(c.lessonCompletions) && isPlainObject(c.srsItems),
+  )
+}
+
 export function todayKey(d: Date = new Date()): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -113,8 +128,19 @@ export const useProgress = create<ProgressState>()((set, get) => {
     data: emptyProgress(),
 
     loadForProfile: (profileId, defaultCourse) => {
-      const raw = localStorage.getItem(progressStorageKey(profileId))
-      const data = raw ? (JSON.parse(raw) as ProgressData) : emptyProgress(defaultCourse)
+      const key = progressStorageKey(profileId)
+      const raw = localStorage.getItem(key)
+      let data = emptyProgress(defaultCourse)
+      if (raw) {
+        try {
+          // ponytail: parse-only guard here — no shape check, or legacy-but-valid data would be discarded
+          data = JSON.parse(raw) as ProgressData
+        } catch {
+          // corrupted blob: keep it under a backup key instead of bricking the app
+          localStorage.setItem(`${key}:corrupt`, raw)
+          console.warn(`lingoforge: corrupt progress for profile ${profileId}, starting fresh (backup at ${key}:corrupt)`)
+        }
+      }
       set({ profileId, data })
     },
 
@@ -186,8 +212,8 @@ export const useProgress = create<ProgressState>()((set, get) => {
 
     importData: (json) => {
       try {
-        const parsed = JSON.parse(json) as ProgressData
-        if (typeof parsed.xp !== 'number' || !parsed.dailyLog) return false
+        const parsed: unknown = JSON.parse(json)
+        if (!isProgressData(parsed)) return false
         update(() => parsed)
         return true
       } catch {
