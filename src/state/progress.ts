@@ -132,10 +132,15 @@ export const useProgress = create<ProgressState>()((set, get) => {
       const raw = localStorage.getItem(key)
       let data = emptyProgress(defaultCourse)
       if (raw) {
+        let parsed: unknown
         try {
-          // ponytail: parse-only guard here — no shape check, or legacy-but-valid data would be discarded
-          data = JSON.parse(raw) as ProgressData
+          parsed = JSON.parse(raw)
         } catch {
+          parsed = undefined
+        }
+        if (isProgressData(parsed)) {
+          data = parsed
+        } else {
           // corrupted blob: keep it under a backup key instead of bricking the app
           localStorage.setItem(`${key}:corrupt`, raw)
           console.warn(`lingoforge: corrupt progress for profile ${profileId}, starting fresh (backup at ${key}:corrupt)`)

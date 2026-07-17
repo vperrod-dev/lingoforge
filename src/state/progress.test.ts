@@ -159,6 +159,19 @@ describe('useProgress store', () => {
       useProgress.getState().loadForProfile('p4', 'ru')
       expect(localStorage.getItem(`${progressStorageKey('p4')}:corrupt`)).toBe('{not json!!')
     })
+
+    it('falls back to fresh state on valid JSON with a malformed shape', () => {
+      localStorage.setItem(progressStorageKey('p5'), JSON.stringify({ xp: 'nope' }))
+      useProgress.getState().loadForProfile('p5', 'es')
+      expect(useProgress.getState().data).toMatchObject({ xp: 0, activeCourse: 'es' })
+    })
+
+    it('preserves a malformed-shape blob under the backup key', () => {
+      const blob = JSON.stringify({ xp: 'nope' })
+      localStorage.setItem(progressStorageKey('p6'), blob)
+      useProgress.getState().loadForProfile('p6', 'ru')
+      expect(localStorage.getItem(`${progressStorageKey('p6')}:corrupt`)).toBe(blob)
+    })
   })
 
   describe('exportData / importData', () => {
