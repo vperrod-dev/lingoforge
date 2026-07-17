@@ -22,6 +22,46 @@ export interface ScenarioData {
   dialogue: DialogueLine[]
 }
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null
+}
+
+function isScenarioVocab(v: unknown): v is ScenarioData['vocab'][number] {
+  return (
+    isRecord(v) &&
+    typeof v.word === 'string' &&
+    typeof v.translation === 'string' &&
+    typeof v.pronunciation === 'string'
+  )
+}
+
+function isScenarioPhrase(v: unknown): v is ScenarioPhrase {
+  return (
+    isRecord(v) &&
+    typeof v.phrase === 'string' &&
+    typeof v.translation === 'string' &&
+    typeof v.usage === 'string'
+  )
+}
+
+function isDialogueLine(v: unknown): v is DialogueLine {
+  return (
+    isRecord(v) &&
+    (v.speaker === 'you' || v.speaker === 'other') &&
+    typeof v.line === 'string' &&
+    typeof v.translation === 'string'
+  )
+}
+
+function filterValid<T>(list: unknown, isValid: (v: unknown) => v is T, label: string): T[] {
+  const raw = Array.isArray(list) ? list : []
+  const valid = raw.filter(isValid)
+  if (valid.length < raw.length) {
+    console.warn(`Ollama scenario: dropped ${raw.length - valid.length} malformed "${label}" item(s)`)
+  }
+  return valid
+}
+
 const LANG_NAMES: Record<string, string> = {
   'ru-RU': 'Russian',
   'es-ES': 'Spanish',
@@ -50,16 +90,19 @@ Rules:
 - Phrases should be practical and immediately usable
 - Include polite/formal variants where relevant`
 
-  const result = await generateJSON<ScenarioData>(prompt)
-  for (const field of ['vocab', 'phrases', 'dialogue'] as const) {
-    if (!result[field]) console.warn(`Ollama scenario response missing "${field}" — using empty list`)
+  const result = await generateJSON<Partial<ScenarioData> | null>(prompt)
+  const vocab = filterValid(result?.vocab, isScenarioVocab, 'vocab')
+  const phrases = filterValid(result?.phrases, isScenarioPhrase, 'phrases')
+  const dialogue = filterValid(result?.dialogue, isDialogueLine, 'dialogue')
+  if (vocab.length === 0 && phrases.length === 0 && dialogue.length === 0) {
+    throw new Error('The AI returned an unusable scenario — please try again')
   }
   return {
-    title: result.title ?? situation,
-    culturalTip: result.culturalTip ?? '',
-    vocab: result.vocab ?? [],
-    phrases: result.phrases ?? [],
-    dialogue: result.dialogue ?? [],
+    title: typeof result?.title === 'string' ? result.title : situation,
+    culturalTip: typeof result?.culturalTip === 'string' ? result.culturalTip : '',
+    vocab,
+    phrases,
+    dialogue,
   }
 }
 

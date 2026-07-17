@@ -14,6 +14,18 @@ interface TopicVocabResponse {
   vocab: GeneratedVocab[]
 }
 
+function isGeneratedVocab(v: unknown): v is GeneratedVocab {
+  if (typeof v !== 'object' || v === null) return false
+  const o = v as Record<string, unknown>
+  return (
+    typeof o.word === 'string' &&
+    typeof o.translation === 'string' &&
+    typeof o.pronunciation === 'string' &&
+    typeof o.example === 'string' &&
+    typeof o.exampleTranslation === 'string'
+  )
+}
+
 const LANG_NAMES: Record<string, string> = {
   'ru-RU': 'Russian',
   'es-ES': 'Spanish',
@@ -35,9 +47,16 @@ Rules:
 - Example sentences should be simple and use the word in context
 - Pronunciation should help an English speaker approximate the sound`
 
-  const result = await generateJSON<TopicVocabResponse>(prompt)
-  if (!result.vocab) console.warn('Ollama topic-vocab response missing "vocab" — using empty list')
-  return result.vocab ?? []
+  const result = await generateJSON<Partial<TopicVocabResponse> | null>(prompt)
+  const raw = Array.isArray(result?.vocab) ? result.vocab : []
+  const vocab = raw.filter(isGeneratedVocab)
+  if (vocab.length < raw.length) {
+    console.warn(`Ollama topic-vocab: dropped ${raw.length - vocab.length} malformed item(s)`)
+  }
+  if (vocab.length === 0) {
+    throw new Error('The AI returned unusable vocabulary — please try again')
+  }
+  return vocab
 }
 
 export function topicVocabToExercises(

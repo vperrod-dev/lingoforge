@@ -20,6 +20,21 @@ interface VisionResponse {
   }[]
 }
 
+function isVisionObject(v: unknown): v is VisionResponse['objects'][number] {
+  if (typeof v !== 'object' || v === null) return false
+  const o = v as Record<string, unknown>
+  return (
+    typeof o.name_en === 'string' &&
+    typeof o.name_target === 'string' &&
+    typeof o.pronunciation === 'string' &&
+    typeof o.example === 'string' &&
+    typeof o.exampleTranslation === 'string' &&
+    Array.isArray(o.bbox) &&
+    o.bbox.length === 4 &&
+    o.bbox.every((n) => typeof n === 'number' && Number.isFinite(n))
+  )
+}
+
 const LANG_NAMES: Record<string, string> = {
   'ru-RU': 'Russian',
   'es-ES': 'Spanish',
@@ -40,9 +55,16 @@ Rules:
 - Use common, practical vocabulary
 - Example sentences should be simple A2 level`
 
-  const result = await generateVision<VisionResponse>(prompt, imageBase64)
-  if (!result.objects) console.warn('Ollama vision response missing "objects" — using empty list')
-  return (result.objects ?? []).map((o) => ({
+  const result = await generateVision<Partial<VisionResponse> | null>(prompt, imageBase64)
+  const raw = Array.isArray(result?.objects) ? result.objects : []
+  const objects = raw.filter(isVisionObject)
+  if (objects.length < raw.length) {
+    console.warn(`Ollama vision: dropped ${raw.length - objects.length} malformed object(s)`)
+  }
+  if (raw.length > 0 && objects.length === 0) {
+    throw new Error('The AI returned unusable object data — please try again')
+  }
+  return objects.map((o) => ({
     nameEn: o.name_en,
     nameTarget: o.name_target,
     pronunciation: o.pronunciation,
