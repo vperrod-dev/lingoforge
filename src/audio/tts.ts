@@ -78,9 +78,8 @@ async function speakWebSpeech(text: string, lang: string, rate: number): Promise
 
 export async function speak(text: string, lang: string, rate = 0.9): Promise<void> {
   const url = audioUrl(text, lang)
-  console.log('[tts] fetch:', url)
   const played = await playAudioFile(url)
-  console.log('[tts] result:', played ? 'mp3 ✓' : 'fallback → Web Speech')
+  if (import.meta.env.DEV) console.log('[tts]', url, played ? 'mp3 ✓' : 'fallback → Web Speech')
   if (!played) {
     await speakWebSpeech(text, lang, rate)
   }
