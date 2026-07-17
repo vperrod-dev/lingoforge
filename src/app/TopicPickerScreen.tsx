@@ -9,6 +9,8 @@ import { ClayButton } from '../ui/ClayButton'
 import { isOllamaOnline } from '../services/ollama'
 import { generateTopicVocab } from '../services/ai-exercises'
 import { useProgress } from '../state/progress'
+import { useSettings } from '../state/settings'
+import { AiOptIn } from '../ui/AiOptIn'
 import { courses } from '../content'
 
 const PRESETS = [
@@ -31,6 +33,7 @@ export function TopicPickerScreen() {
   const data = useProgress((s) => s.data)
   const course = courses[data.activeCourse]
 
+  const aiEnabled = useSettings((s) => s.aiEnabled)
   const [customTopic, setCustomTopic] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -69,6 +72,9 @@ export function TopicPickerScreen() {
           Pick a topic — AI generates vocab and exercises in {course.name}
         </p>
       </div>
+
+      {!aiEnabled && <AiOptIn />}
+      {aiEnabled && <>
 
       {status === 'offline' && (
         <div className="clay flex items-center gap-3 border-danger bg-danger-soft p-4">
@@ -133,6 +139,7 @@ export function TopicPickerScreen() {
           <p className="text-sm text-fg-muted">This can take 15-30 seconds</p>
         </div>
       )}
+      </>}
     </div>
   )
 }

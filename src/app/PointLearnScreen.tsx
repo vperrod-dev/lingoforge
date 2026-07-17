@@ -6,11 +6,14 @@ import { isOllamaOnline } from '../services/ollama'
 import { identifyObjects, captureFrame, type DetectedObject } from '../services/vision'
 import { speak } from '../audio/tts'
 import { useProgress } from '../state/progress'
+import { useSettings } from '../state/settings'
+import { AiOptIn } from '../ui/AiOptIn'
 import { courses } from '../content'
 
 type Phase = 'camera' | 'scanning' | 'results' | 'offline' | 'error' | 'no-camera'
 
 export function PointLearnScreen() {
+  const aiEnabled = useSettings((s) => s.aiEnabled)
   const data = useProgress((s) => s.data)
   const { reviewVocab } = useProgress()
   const course = courses[data.activeCourse]
@@ -45,9 +48,10 @@ export function PointLearnScreen() {
   }, [])
 
   useEffect(() => {
+    if (!aiEnabled) return
     startCamera()
     return stopCamera
-  }, [startCamera, stopCamera])
+  }, [aiEnabled, startCamera, stopCamera])
 
   const snap = async () => {
     if (!videoRef.current) return
@@ -86,6 +90,14 @@ export function PointLearnScreen() {
   const addToReview = (obj: DetectedObject) => {
     reviewVocab(data.activeCourse, `pointlearn:${obj.nameTarget}`, true)
     setAdded((prev) => new Set(prev).add(obj.nameTarget))
+  }
+
+  if (!aiEnabled) {
+    return (
+      <div className="flex min-h-dvh flex-col justify-center p-6">
+        <AiOptIn detail="Point & Learn also sends your camera frames to that local server for object detection." />
+      </div>
+    )
   }
 
   if (phase === 'no-camera') {

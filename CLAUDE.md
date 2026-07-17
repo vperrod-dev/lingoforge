@@ -33,6 +33,12 @@ npm run gen-audio    # pre-generate MP3s (python scripts/gen-audio.py)
 ## Conventions
 
 - Local-first is a hard constraint: no backend, no external APIs, no accounts.
+  One deliberate exception: the AI lessons (`src/services/ollama.ts` + topic/
+  scenario/point-learn screens) call a **local** Ollama server at
+  `localhost:11434` — vision sends camera frames to it. Gated behind the
+  `aiEnabled` setting (`src/state/settings.ts`, default **off**); screens show
+  an opt-in card when off and a graceful "Ollama is not running" notice when
+  it's unreachable. See README "Optional: AI lessons (Ollama)".
 - New content must extend the `content.test.ts` integrity checks.
 - Verify UI changes with a Playwright smoke pass across affected routes.
 

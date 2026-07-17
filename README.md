@@ -27,6 +27,16 @@ npm run build    # production build (dist/)
 
 Audio uses the Web Speech API — Edge/Chrome on desktop include ru-RU and es-ES voices.
 
+## Optional: AI lessons (Ollama)
+
+Topic Lessons, Scenario Lessons and Point & Learn generate content with a **local
+[Ollama](https://ollama.com) server** at `http://localhost:11434` (`gemma2:9b` for
+text, `llava:13b` for vision — Point & Learn sends camera frames to it). This is
+**off by default**: each AI screen shows an opt-in card ("Enable AI lessons"), and
+the choice is stored per browser. Nothing is sent to the internet, everything else
+works without Ollama, and if it isn't running you get an inline "Ollama is not
+running" notice instead of a broken screen.
+
 ## Adding content
 
 Courses are typed data in `src/content/courses/*.ts` (validated by `src/content/content.test.ts`). Add vocab/lessons/units there — no app code changes needed.

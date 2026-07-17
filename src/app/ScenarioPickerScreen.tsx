@@ -9,6 +9,8 @@ import { ClayButton } from '../ui/ClayButton'
 import { isOllamaOnline } from '../services/ollama'
 import { generateScenario } from '../services/scenario-gen'
 import { useProgress } from '../state/progress'
+import { useSettings } from '../state/settings'
+import { AiOptIn } from '../ui/AiOptIn'
 import { courses } from '../content'
 
 const PRESETS = [
@@ -30,6 +32,7 @@ export function ScenarioPickerScreen() {
   const data = useProgress((s) => s.data)
   const course = courses[data.activeCourse]
 
+  const aiEnabled = useSettings((s) => s.aiEnabled)
   const [customScenario, setCustomScenario] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -72,6 +75,9 @@ export function ScenarioPickerScreen() {
           Pick a situation — AI generates a dialogue and exercises in {course.name}
         </p>
       </div>
+
+      {!aiEnabled && <AiOptIn />}
+      {aiEnabled && <>
 
       {status === 'offline' && (
         <div className="clay flex items-center gap-3 border-danger bg-danger-soft p-4">
@@ -136,6 +142,7 @@ export function ScenarioPickerScreen() {
           <p className="text-sm text-fg-muted">This can take 20-40 seconds</p>
         </div>
       )}
+      </>}
     </div>
   )
 }
