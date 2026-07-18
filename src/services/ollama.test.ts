@@ -44,6 +44,12 @@ describe('generateJSON', () => {
     await expect(generateJSON('prompt')).resolves.toEqual({ vocab: [] })
   })
 
+  it('recovers JSON when surrounding prose contains stray braces', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    stubFetchResponse('Use {placeholder} syntax. Result: {"vocab": ["дом"]} — note the {braces} above.')
+    await expect(generateJSON('prompt')).resolves.toEqual({ vocab: ['дом'] })
+  })
+
   it('throws when the response contains no JSON object at all', async () => {
     stubFetchResponse('I cannot help with that.')
     await expect(generateJSON('prompt')).rejects.toThrow('Failed to parse Ollama JSON')

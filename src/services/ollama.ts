@@ -55,15 +55,42 @@ export async function generate(prompt: string, system?: string): Promise<string>
   return data.response
 }
 
+// Greedy /\{[\s\S]*\}/ grabs the wrong span when prose around the JSON has
+// stray braces; instead try each '{' and return the first balanced, parseable span.
+function extractJSON(raw: string): string | null {
+  for (let start = raw.indexOf('{'); start !== -1; start = raw.indexOf('{', start + 1)) {
+    let depth = 0
+    let inString = false
+    for (let i = start; i < raw.length; i++) {
+      const c = raw[i]
+      if (inString) {
+        if (c === '\\') i++
+        else if (c === '"') inString = false
+      } else if (c === '"') inString = true
+      else if (c === '{') depth++
+      else if (c === '}' && --depth === 0) {
+        const candidate = raw.slice(start, i + 1)
+        try {
+          JSON.parse(candidate)
+          return candidate
+        } catch {
+          break
+        }
+      }
+    }
+  }
+  return null
+}
+
 export async function generateJSON<T>(prompt: string, system?: string): Promise<T> {
   const raw = await generate(prompt, system)
   try {
     return JSON.parse(raw) as T
   } catch {
-    const match = raw.match(/\{[\s\S]*\}/)
-    if (match) {
+    const extracted = extractJSON(raw)
+    if (extracted) {
       console.warn(`Ollama returned malformed JSON, recovered via brace-extraction fallback: ${raw.slice(0, 200)}`)
-      return JSON.parse(match[0]) as T
+      return JSON.parse(extracted) as T
     }
     throw new Error(`Failed to parse Ollama JSON: ${raw.slice(0, 200)}`)
   }
@@ -91,10 +118,10 @@ export async function generateVision<T>(prompt: string, imageBase64: string, sys
   try {
     return JSON.parse(raw) as T
   } catch {
-    const match = raw.match(/\{[\s\S]*\}/)
-    if (match) {
+    const extracted = extractJSON(raw)
+    if (extracted) {
       console.warn(`Ollama vision returned malformed JSON, recovered via brace-extraction fallback: ${raw.slice(0, 200)}`)
-      return JSON.parse(match[0]) as T
+      return JSON.parse(extracted) as T
     }
     throw new Error(`Failed to parse vision JSON: ${raw.slice(0, 200)}`)
   }
