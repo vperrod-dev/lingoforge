@@ -24,6 +24,7 @@ export default function App() {
   const profile = profiles.find((p) => p.id === activeProfileId)
   const loadForProfile = useProgress((s) => s.loadForProfile)
   const loadedProfileId = useProgress((s) => s.profileId)
+  const storageError = useProgress((s) => s.storageError)
 
   useEffect(() => {
     if (profile) loadForProfile(profile.id, profile.courses[0])
@@ -35,6 +36,11 @@ export default function App() {
 
   return (
     <HashRouter>
+      {storageError && (
+        <div role="alert" className="fixed inset-x-0 top-0 z-50 bg-amber-500 px-4 py-2 text-center text-sm font-medium text-white">
+          Storage is full — your progress can’t be saved. Free up space or export a backup from Stats.
+        </div>
+      )}
       <Routes>
         <Route path="/lesson/:courseId/:lessonId" element={<LessonScreen />} />
         <Route path="/placement/:courseId" element={<PlacementScreen />} />

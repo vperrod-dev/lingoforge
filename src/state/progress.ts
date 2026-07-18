@@ -80,6 +80,8 @@ export function computeStreak(dailyLog: Record<string, DayLog>, goalMinutes: num
 interface ProgressState {
   profileId: string | null
   data: ProgressData
+  /** true when the last save failed (storage full / private mode) — progress is not being persisted */
+  storageError: boolean
   loadForProfile: (profileId: string, defaultCourse: CourseId) => void
   setActiveCourse: (course: CourseId) => void
   setDailyGoal: (minutes: number) => void
@@ -94,17 +96,24 @@ interface ProgressState {
   importData: (json: string) => boolean
 }
 
-function saveToStorage(profileId: string | null, data: ProgressData) {
-  if (!profileId) return
-  localStorage.setItem(progressStorageKey(profileId), JSON.stringify(data))
+function saveToStorage(profileId: string | null, data: ProgressData): boolean {
+  if (!profileId) return true
+  try {
+    localStorage.setItem(progressStorageKey(profileId), JSON.stringify(data))
+    return true
+  } catch (e) {
+    // QuotaExceededError (Safari private mode, full storage) — keep in-memory state usable
+    console.warn('lingoforge: failed to save progress to localStorage', e)
+    return false
+  }
 }
 
 export const useProgress = create<ProgressState>()((set, get) => {
   const update = (fn: (d: ProgressData) => ProgressData) => {
     const { profileId, data } = get()
     const next = fn(data)
-    saveToStorage(profileId, next)
-    set({ data: next })
+    const saved = saveToStorage(profileId, next)
+    set({ data: next, storageError: !saved })
   }
 
   const bumpDay = (d: ProgressData, delta: Partial<DayLog>): ProgressData => {
@@ -126,6 +135,7 @@ export const useProgress = create<ProgressState>()((set, get) => {
   return {
     profileId: null,
     data: emptyProgress(),
+    storageError: false,
 
     loadForProfile: (profileId, defaultCourse) => {
       const key = progressStorageKey(profileId)
@@ -146,7 +156,7 @@ export const useProgress = create<ProgressState>()((set, get) => {
           console.warn(`lingoforge: corrupt progress for profile ${profileId}, starting fresh (backup at ${key}:corrupt)`)
         }
       }
-      set({ profileId, data })
+      set({ profileId, data, storageError: false })
     },
 
     setActiveCourse: (course) => update((d) => ({ ...d, activeCourse: course })),

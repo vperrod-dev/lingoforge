@@ -274,6 +274,33 @@ describe('useProgress store', () => {
     })
   })
 
+  describe('storage failure', () => {
+    const failNextSetItem = () => {
+      vi.spyOn(localStorage, 'setItem').mockImplementationOnce(() => {
+        throw new DOMException('quota', 'QuotaExceededError')
+      })
+    }
+
+    it('keeps the in-memory mutation when setItem throws', () => {
+      failNextSetItem()
+      useProgress.getState().addXp(10)
+      expect(useProgress.getState().data.xp).toBe(10)
+    })
+
+    it('sets storageError when setItem throws', () => {
+      failNextSetItem()
+      useProgress.getState().addXp(10)
+      expect(useProgress.getState().storageError).toBe(true)
+    })
+
+    it('clears storageError once a later save succeeds', () => {
+      failNextSetItem()
+      useProgress.getState().addXp(10)
+      useProgress.getState().addXp(5)
+      expect(useProgress.getState().storageError).toBe(false)
+    })
+  })
+
   describe('earnBadge', () => {
     it('records an earned timestamp', () => {
       useProgress.getState().earnBadge('first-lesson')
