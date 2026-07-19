@@ -160,6 +160,15 @@ describe('useProgress store', () => {
       expect(localStorage.getItem(`${progressStorageKey('p4')}:corrupt`)).toBe('{not json!!')
     })
 
+    it('still loads fresh state when writing the corrupt backup throws', () => {
+      localStorage.setItem(progressStorageKey('p7'), '{not json!!')
+      vi.spyOn(localStorage, 'setItem').mockImplementationOnce(() => {
+        throw new DOMException('quota', 'QuotaExceededError')
+      })
+      useProgress.getState().loadForProfile('p7', 'es')
+      expect(useProgress.getState().data).toMatchObject({ xp: 0, activeCourse: 'es' })
+    })
+
     it('falls back to fresh state on valid JSON with a malformed shape', () => {
       localStorage.setItem(progressStorageKey('p5'), JSON.stringify({ xp: 'nope' }))
       useProgress.getState().loadForProfile('p5', 'es')

@@ -152,7 +152,12 @@ export const useProgress = create<ProgressState>()((set, get) => {
           data = parsed
         } else {
           // corrupted blob: keep it under a backup key instead of bricking the app
-          localStorage.setItem(`${key}:corrupt`, raw)
+          try {
+            localStorage.setItem(`${key}:corrupt`, raw)
+          } catch (e) {
+            // QuotaExceededError (Safari private mode, full storage) — losing the backup beats crashing on load
+            console.warn('lingoforge: failed to back up corrupt progress blob', e)
+          }
           console.warn(`lingoforge: corrupt progress for profile ${profileId}, starting fresh (backup at ${key}:corrupt)`)
         }
       }
