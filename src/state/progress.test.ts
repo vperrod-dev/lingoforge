@@ -128,6 +128,34 @@ describe('isProgressData', () => {
   it('rejects a course entry without srsItems', () => {
     expect(isProgressData({ ...validData(), courses: { ru: { lessonCompletions: {} } } })).toBe(false)
   })
+
+  it('accepts populated dailyLog and badges entries', () => {
+    const data = validData({
+      dailyLog: { '2026-07-01': { minutes: 5, xp: 20, lessons: 1 } },
+      badges: { 'first-lesson': 1751328000000 },
+    })
+    expect(isProgressData(data)).toBe(true)
+  })
+
+  it('rejects a dailyLog entry missing a field', () => {
+    const dailyLog = { '2026-07-01': { minutes: 5, xp: 20 } } as unknown as ProgressData['dailyLog']
+    expect(isProgressData(validData({ dailyLog }))).toBe(false)
+  })
+
+  it('rejects a dailyLog entry with a non-numeric field', () => {
+    const dailyLog = { '2026-07-01': { minutes: '5', xp: 20, lessons: 1 } } as unknown as ProgressData['dailyLog']
+    expect(isProgressData(validData({ dailyLog }))).toBe(false)
+  })
+
+  it('rejects a non-object dailyLog entry', () => {
+    const dailyLog = { '2026-07-01': null } as unknown as ProgressData['dailyLog']
+    expect(isProgressData(validData({ dailyLog }))).toBe(false)
+  })
+
+  it('rejects a non-numeric badge timestamp', () => {
+    const badges = { 'first-lesson': '2026-07-01' } as unknown as ProgressData['badges']
+    expect(isProgressData(validData({ badges }))).toBe(false)
+  })
 })
 
 describe('useProgress store', () => {

@@ -45,12 +45,19 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
-/** Shape check for imported backups — untrusted input, reject anything malformed. */
+const isDayLog = (v: unknown): v is DayLog =>
+  isPlainObject(v) && typeof v.minutes === 'number' && typeof v.xp === 'number' && typeof v.lessons === 'number'
+
+/** Shape check for imported backups — untrusted input, reject anything malformed.
+ *  Entries are checked too: a partially-corrupted dailyLog/badges entry would
+ *  otherwise slip through and turn streak/XP stats into NaN. */
 export function isProgressData(v: unknown): v is ProgressData {
   if (!isPlainObject(v)) return false
   if (typeof v.xp !== 'number' || typeof v.dailyGoalMinutes !== 'number') return false
   if (typeof v.activeCourse !== 'string' || !(v.activeCourse in courses)) return false
   if (!isPlainObject(v.dailyLog) || !isPlainObject(v.badges) || !isPlainObject(v.courses)) return false
+  if (!Object.values(v.dailyLog).every(isDayLog)) return false
+  if (!Object.values(v.badges).every((b) => typeof b === 'number')) return false
   return Object.values(v.courses).every(
     (c) => isPlainObject(c) && isPlainObject(c.lessonCompletions) && isPlainObject(c.srsItems),
   )
