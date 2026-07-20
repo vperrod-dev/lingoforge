@@ -7,6 +7,7 @@ import { useProgress } from '../state/progress'
 import { speak } from '../audio/tts'
 import { GlossText } from '../ui/GlossText'
 import { ClayButton } from '../ui/ClayButton'
+import { optionOrder } from './option-order'
 
 export function ReadingScreen() {
   const { courseId, textId } = useParams<{ courseId: CourseId; textId: string }>()
@@ -120,7 +121,8 @@ export function ReadingScreen() {
             <div key={qi} className="flex flex-col gap-2">
               <p className="font-semibold">{q.q}</p>
               <div className="flex flex-col gap-2">
-                {q.options.map((opt, oi) => {
+                {optionOrder(`${text.id}:${qi}`, q.options.length).map((oi) => {
+                  const opt = q.options[oi]
                   const picked = answers[qi] === oi
                   const isRight = oi === q.correctIndex
                   let cls = 'clay clay-press p-3 text-left'
