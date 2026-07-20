@@ -26,3 +26,4 @@ dist-single
 
 # Generated audio assets (regenerated at build time via scripts/gen-audio.py)
 public/audio/
+.venv-deploy/
