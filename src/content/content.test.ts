@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { optionOrder } from '../app/option-order'
 import { courses, ruAlphabet, readings, phrasebook } from './index'
 
 const courseList = Object.values(courses)
@@ -73,6 +74,19 @@ describe.each(courseList)('reading content $id', (course) => {
       if (t.kind === 'story') expect(t.body, t.id).toBeTruthy()
       else expect(t.turns?.length, t.id).toBeGreaterThan(0)
     }
+  })
+
+  it('comprehension answers do not all land on the same button', () => {
+    const uniform: string[] = []
+    for (const t of texts) {
+      const questions = t.questions ?? []
+      if (questions.length < 2) continue
+      const positions = questions.map((q, i) =>
+        optionOrder(`${t.id}:${i}`, q.options.length).indexOf(q.correctIndex),
+      )
+      if (new Set(positions).size === 1) uniform.push(t.id)
+    }
+    expect(uniform).toEqual([])
   })
 
   it('comprehension answers are in range', () => {
