@@ -26,8 +26,8 @@ export function SpeakExercise({ ttsText, ttsLang, accept, answer, onAnswer }: Pr
     const rec = createRecognizer(ttsLang)
     if (!rec) return
     setListening(true)
-    rec.onresult = (e: any) => {
-      const alternatives: string[] = Array.from(e.results[0]).map((r: any) => r.transcript)
+    rec.onresult = (e) => {
+      const alternatives: string[] = Array.from(e.results[0]).map((r) => r.transcript)
       setHeard(alternatives[0])
       setSubmitted(true)
       onAnswer(alternatives.some((t) => matchesAny(accept, t)), answer)

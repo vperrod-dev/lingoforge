@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Volume2 } from 'lucide-react'
 import { speak } from '../audio/tts'
 import { ClayButton } from '../ui/ClayButton'
@@ -18,10 +18,10 @@ interface Chip {
 }
 
 export function ReorderDictationExercise({ sentence, ttsLang, answerChips, distractorChips, onAnswer }: Props) {
-  const bank = useMemo<Chip[]>(() => {
+  const [bank] = useState<Chip[]>(() => {
     const all = [...answerChips, ...distractorChips].map((word, id) => ({ id, word }))
     return all.sort(() => Math.random() - 0.5)
-  }, [answerChips, distractorChips])
+  })
 
   const [placed, setPlaced] = useState<Chip[]>([])
   const [submitted, setSubmitted] = useState(false)

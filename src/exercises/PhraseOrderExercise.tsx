@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ClayButton } from '../ui/ClayButton'
 
 interface Phrase {
@@ -12,9 +12,8 @@ interface Props {
 }
 
 export function PhraseOrderExercise({ phrases, onAnswer }: Props) {
-  const shuffled = useMemo(
-    () => phrases.map((p, i) => ({ ...p, originalIndex: i })).sort(() => Math.random() - 0.5),
-    [phrases],
+  const [shuffled] = useState(() =>
+    phrases.map((p, i) => ({ ...p, originalIndex: i })).sort(() => Math.random() - 0.5),
   )
 
   const [placed, setPlaced] = useState<typeof shuffled>([])

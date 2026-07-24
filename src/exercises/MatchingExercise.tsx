@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 interface Pair {
   left: string
@@ -13,7 +13,7 @@ interface Props {
 
 /** Match game: all pairs must be matched; mistakes allowed but tracked. */
 export function MatchingExercise({ pairs, onAnswer }: Props) {
-  const rights = useMemo(() => [...pairs].sort(() => Math.random() - 0.5), [pairs])
+  const [rights] = useState(() => [...pairs].sort(() => Math.random() - 0.5))
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [matched, setMatched] = useState<Set<string>>(new Set())
   const [shake, setShake] = useState<string | null>(null)

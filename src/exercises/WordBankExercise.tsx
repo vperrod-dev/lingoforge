@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Volume2 } from 'lucide-react'
 import { speak } from '../audio/tts'
 import { ClayButton } from '../ui/ClayButton'
@@ -19,10 +19,10 @@ interface Chip {
 }
 
 export function WordBankExercise({ sentence, translation, answerChips, distractorChips, ttsLang, onAnswer }: Props) {
-  const bank = useMemo<Chip[]>(() => {
+  const [bank] = useState<Chip[]>(() => {
     const all = [...answerChips, ...distractorChips].map((word, id) => ({ id, word }))
     return all.sort(() => Math.random() - 0.5)
-  }, [answerChips, distractorChips])
+  })
 
   const [placed, setPlaced] = useState<Chip[]>([])
   const [submitted, setSubmitted] = useState(false)

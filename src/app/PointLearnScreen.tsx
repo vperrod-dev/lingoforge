@@ -49,6 +49,7 @@ export function PointLearnScreen() {
 
   useEffect(() => {
     if (!aiEnabled) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- setPhase runs only after the async getUserMedia settles, not synchronously
     startCamera()
     return stopCamera
   }, [aiEnabled, startCamera, stopCamera])

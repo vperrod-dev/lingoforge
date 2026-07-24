@@ -118,6 +118,7 @@ export function LessonPlayer({ exercises, renderExercise, onComplete, onExit }: 
         transition={{ duration: 0.2 }}
         className="grow"
       >
+        {/* eslint-disable-next-line react-hooks/refs -- handleAnswer only reads refs inside the onAnswer event callback, never during render */}
         {current && renderExercise(current, handleAnswer)}
       </motion.section>
 
