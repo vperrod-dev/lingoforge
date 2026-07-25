@@ -90,6 +90,16 @@ describe('useProfiles store', () => {
     })
   })
 
+  describe('storage failure', () => {
+    it('does not throw when localStorage.setItem fails (quota / private mode)', () => {
+      vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+        throw new DOMException('QuotaExceededError')
+      })
+      expect(() => create()).not.toThrow()
+      vi.restoreAllMocks()
+    })
+  })
+
   describe('addCourse', () => {
     it('appends a new course to the profile', () => {
       const p = create()

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { CourseId } from '../content/types'
+import { safeJSONStorage } from './safe-storage'
 
 /** crypto.randomUUID is missing on some older browsers / non-secure contexts */
 function newProfileId(): string {
@@ -62,7 +63,7 @@ export const useProfiles = create<ProfilesState>()(
           ),
         })),
     }),
-    { name: 'lingoforge:profiles' },
+    { name: 'lingoforge:profiles', storage: safeJSONStorage },
   ),
 )
 
