@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { Zap, Target, Timer } from 'lucide-react'
 import { topicVocabToExercises } from '../services/ai-exercises'

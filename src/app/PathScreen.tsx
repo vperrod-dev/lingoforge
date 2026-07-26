@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { Lock, Check, Star, Hand, Sparkles, Coffee, Package, Users, MessageCircle, MapPin, Home, Hash, Clock, Wand2, Theater, Camera, GraduationCap, ChevronDown, ChevronUp, BookOpen, MessagesSquare } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'

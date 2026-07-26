@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { motion } from 'framer-motion'
 import { courses } from '../content'
 import type { CourseId } from '../content/types'

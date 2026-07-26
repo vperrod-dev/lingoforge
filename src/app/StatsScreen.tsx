@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Download, Upload, Zap, BookOpen, Flame, Footprints, Library, Trophy, Type } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useProgress, computeStreak, todayKey } from '../state/progress'

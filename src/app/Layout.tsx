@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router'
 import { Map, Type, Dumbbell, BarChart3, Users } from 'lucide-react'
 import { useProfiles } from '../state/profiles'
 import { useProgress, computeStreak, todayKey } from '../state/progress'

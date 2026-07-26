@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router'
 import { useProfiles } from './state/profiles'
 import { useProgress } from './state/progress'
 import { ProfilePicker } from './app/ProfilePicker'

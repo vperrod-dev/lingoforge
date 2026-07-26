@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Volume2, Eye, EyeOff } from 'lucide-react'
 import { courses, getReading } from '../content'
 import type { CourseId } from '../content/types'

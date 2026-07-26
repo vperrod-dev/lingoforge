@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { Zap, Target, Timer, Lightbulb } from 'lucide-react'
 import { scenarioToExercises, type ScenarioData } from '../services/scenario-gen'

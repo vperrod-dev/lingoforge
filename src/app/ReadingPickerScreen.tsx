@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { BookOpen, MessageSquare } from 'lucide-react'
 import { courses, readings } from '../content'
 import { useProgress } from '../state/progress'
