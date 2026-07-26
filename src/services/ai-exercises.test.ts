@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { generateJSON } from './ollama'
-import { generateTopicVocab } from './ai-exercises'
+import { generateTopicVocab, topicVocabToExercises } from './ai-exercises'
+import type { ExerciseInstance } from '../engine/exercise-gen'
+
+type Cloze = Extract<ExerciseInstance, { kind: 'cloze' }>
+type WithCorrect = Extract<ExerciseInstance, { correctIndex: number }>
 
 vi.mock('./ollama', () => ({ generateJSON: vi.fn() }))
 const mockGenerateJSON = vi.mocked(generateJSON)
@@ -37,5 +41,28 @@ describe('generateTopicVocab', () => {
   it('throws when the response has no vocab array', async () => {
     mockGenerateJSON.mockResolvedValue(null)
     await expect(generateTopicVocab('animals', 'es-ES')).rejects.toThrow('unusable vocabulary')
+  })
+})
+
+describe('topicVocabToExercises', () => {
+  it('blanks the vocab word in the cloze even when it carries trailing punctuation', () => {
+    const item = { ...validItem, word: 'gato', example: 'Veo un gato.', exampleTranslation: 'I see a cat.' }
+    const cloze = topicVocabToExercises([item]).find((e): e is Cloze => e.kind === 'cloze')
+    expect(cloze && cloze.tokens[cloze.blankIndex]).toBe('gato.')
+  })
+
+  it('keeps the correct answer among the options for every choice and listening exercise', () => {
+    const vocab = ['gato/cat', 'perro/dog', 'pez/fish', 'ave/bird'].map((s) => {
+      const [word, translation] = s.split('/')
+      return { word, translation, pronunciation: '', example: `Un ${word}.`, exampleTranslation: `A ${translation}.` }
+    })
+    const indexes = topicVocabToExercises(vocab)
+      .filter((e) => e.kind === 'choice' || e.kind === 'listening')
+      .map((e) => (e as WithCorrect).correctIndex)
+    expect(indexes).not.toContain(-1)
+  })
+
+  it('returns no exercises for empty input', () => {
+    expect(topicVocabToExercises([])).toEqual([])
   })
 })
