@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Check } from 'lucide-react'
+import { Plus, Check, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useProfiles } from '../state/profiles'
 import type { CourseId } from '../content/types'
@@ -8,7 +8,7 @@ import { ClayButton } from '../ui/ClayButton'
 const AVATARS = ['🦊', '🐻', '🐸', '🦉', '🐱', '🐹', '🦁', '🐼']
 
 export function ProfilePicker() {
-  const { profiles, createProfile, switchProfile } = useProfiles()
+  const { profiles, createProfile, switchProfile, deleteProfile } = useProfiles()
   const [creating, setCreating] = useState(profiles.length === 0)
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState(AVATARS[0])
@@ -38,19 +38,35 @@ export function ProfilePicker() {
           <h2 className="text-xl font-bold text-fg-muted">Who is learning today?</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {profiles.map((p, i) => (
-              <motion.button
+              <motion.div
                 key={p.id}
-                type="button"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => switchProfile(p.id)}
-                className="clay clay-press flex flex-col items-center gap-2 p-6"
+                className="relative"
               >
-                <span className="text-5xl" aria-hidden>{p.avatar}</span>
-                <span className="font-display text-xl font-bold">{p.name}</span>
-                <span className="text-sm text-fg-muted">{p.courses.map((c) => (c === 'ru' ? '🇷🇺' : '🇪🇸')).join(' ')}</span>
-              </motion.button>
+                <button
+                  type="button"
+                  onClick={() => switchProfile(p.id)}
+                  className="clay clay-press flex w-full flex-col items-center gap-2 p-6"
+                >
+                  <span className="text-5xl" aria-hidden>{p.avatar}</span>
+                  <span className="font-display text-xl font-bold">{p.name}</span>
+                  <span className="text-sm text-fg-muted">{p.courses.map((c) => (c === 'ru' ? '🇷🇺' : '🇪🇸')).join(' ')}</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete ${p.name}`}
+                  onClick={() => {
+                    if (window.confirm(`Delete ${p.name}? All their progress will be erased.`)) {
+                      deleteProfile(p.id)
+                    }
+                  }}
+                  className="clay clay-press absolute -right-2 -top-2 flex size-11 items-center justify-center text-fg-muted"
+                >
+                  <X className="size-5" aria-hidden />
+                </button>
+              </motion.div>
             ))}
             <button
               type="button"
