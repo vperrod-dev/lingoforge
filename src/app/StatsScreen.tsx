@@ -56,6 +56,8 @@ export function StatsScreen() {
 
   const doImport = async (file: File | undefined) => {
     if (!file) return
+    const name = profile?.name ?? 'the active profile'
+    if (!confirm(`Import "${file.name}"? This replaces all of ${name}'s current progress (XP, streaks, badges, word reviews) and cannot be undone.`)) return
     const ok = importData(await file.text())
     if (!ok) alert('Could not import — invalid file.')
   }
@@ -195,7 +197,10 @@ export function StatsScreen() {
             type="file"
             accept="application/json"
             className="hidden"
-            onChange={(e) => doImport(e.target.files?.[0])}
+            onChange={(e) => {
+              void doImport(e.target.files?.[0])
+              e.target.value = ''
+            }}
           />
         </div>
       </section>
