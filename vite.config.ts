@@ -7,6 +7,14 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 
 // `npm run build:single` produces one self-contained HTML file (no PWA/SW —
 // service workers don't run on file://)
+// The single-file build inlines every script and runs from file://, where the
+// meta CSP ('self' = the null origin) blocks the whole app. Drop it there.
+const stripCspMeta = {
+  name: 'strip-csp-meta',
+  transformIndexHtml: (html: string) =>
+    html.replace(/\s*<meta\s+http-equiv="Content-Security-Policy"[\s\S]*?\/>/, ''),
+}
+
 export default defineConfig(({ mode }) => {
   const singleFile = mode === 'singlefile'
   return {
@@ -15,7 +23,7 @@ export default defineConfig(({ mode }) => {
     react(),
     tailwindcss(),
     ...(singleFile
-      ? [viteSingleFile()]
+      ? [viteSingleFile(), stripCspMeta]
       : [
           VitePWA({
             registerType: 'autoUpdate',
