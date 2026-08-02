@@ -4,6 +4,7 @@ import type { CourseId } from '../content/types'
 import type { SrsItem } from '../engine/srs'
 import { newSrsItem, review } from '../engine/srs'
 import { progressStorageKey } from './profiles'
+import { progressDataSchema } from './progress.schema'
 
 export interface DayLog {
   minutes: number
@@ -41,26 +42,14 @@ const emptyCourseProgress = (): CourseProgress => ({
   srsItems: {},
 })
 
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
-
-const isDayLog = (v: unknown): v is DayLog =>
-  isPlainObject(v) && typeof v.minutes === 'number' && typeof v.xp === 'number' && typeof v.lessons === 'number'
-
 /** Shape check for imported backups — untrusted input, reject anything malformed.
- *  Entries are checked too: a partially-corrupted dailyLog/badges entry would
- *  otherwise slip through and turn streak/XP stats into NaN. */
+ *  Delegates to the zod schema so nested entries are field-checked too: a
+ *  partially-corrupted dailyLog/badges entry or srsItem (missing stability/
+ *  difficulty/dueAt/reps/lapses) would otherwise slip through and turn
+ *  streak/XP stats or the SRS schedule into NaN. The schema types courseIds
+ *  as plain strings, so activeCourse must additionally be a known course. */
 export function isProgressData(v: unknown): v is ProgressData {
-  if (!isPlainObject(v)) return false
-  if (typeof v.xp !== 'number' || typeof v.dailyGoalMinutes !== 'number') return false
-  if (typeof v.activeCourse !== 'string' || !(v.activeCourse in courses)) return false
-  if (!isPlainObject(v.dailyLog) || !isPlainObject(v.badges) || !isPlainObject(v.courses)) return false
-  if (!Object.values(v.dailyLog).every(isDayLog)) return false
-  if (!Object.values(v.badges).every((b) => typeof b === 'number')) return false
-  return Object.values(v.courses).every(
-    (c) => isPlainObject(c) && isPlainObject(c.lessonCompletions) && isPlainObject(c.srsItems),
-  )
+  return progressDataSchema.safeParse(v).success && (v as ProgressData).activeCourse in courses
 }
 
 export function todayKey(d: Date = new Date()): string {

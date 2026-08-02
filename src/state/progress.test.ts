@@ -152,6 +152,23 @@ describe('isProgressData', () => {
     expect(isProgressData(validData({ dailyLog }))).toBe(false)
   })
 
+  it('rejects an srsItem missing its numeric fields', () => {
+    const courses = {
+      ru: { lessonCompletions: {}, srsItems: { v1: { vocabId: 'v1', dueAt: 0 } } },
+    } as unknown as ProgressData['courses']
+    expect(isProgressData(validData({ courses }))).toBe(false)
+  })
+
+  it('rejects an srsItem with a non-numeric stability', () => {
+    const courses = {
+      ru: {
+        lessonCompletions: {},
+        srsItems: { v1: { vocabId: 'v1', stability: 'NaN', difficulty: 0.3, dueAt: 0, reps: 1, lapses: 0 } },
+      },
+    } as unknown as ProgressData['courses']
+    expect(isProgressData(validData({ courses }))).toBe(false)
+  })
+
   it('rejects a non-numeric badge timestamp', () => {
     const badges = { 'first-lesson': '2026-07-01' } as unknown as ProgressData['badges']
     expect(isProgressData(validData({ badges }))).toBe(false)
