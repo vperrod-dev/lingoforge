@@ -27,3 +27,7 @@ dist-single
 # Generated audio assets (regenerated at build time via scripts/gen-audio.py)
 public/audio/
 .venv-deploy/
+
+# Unrelated project checkouts living alongside this repo — never track
+KinkLink_Admin/
+KinkLink_Frontend/
