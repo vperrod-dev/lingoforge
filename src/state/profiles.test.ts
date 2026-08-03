@@ -98,6 +98,25 @@ describe('useProfiles store', () => {
       expect(() => create()).not.toThrow()
       vi.restoreAllMocks()
     })
+
+    it('does not throw when localStorage.removeItem fails during deleteProfile', () => {
+      const p = create()
+      vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+        throw new DOMException('SecurityError')
+      })
+      expect(() => useProfiles.getState().deleteProfile(p.id)).not.toThrow()
+      vi.restoreAllMocks()
+    })
+
+    it('still removes the profile from state when localStorage.removeItem fails', () => {
+      const p = create()
+      vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+        throw new DOMException('SecurityError')
+      })
+      useProfiles.getState().deleteProfile(p.id)
+      vi.restoreAllMocks()
+      expect(useProfiles.getState().profiles).toEqual([])
+    })
   })
 
   describe('addCourse', () => {

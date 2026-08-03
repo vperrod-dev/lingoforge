@@ -48,7 +48,14 @@ export const useProfiles = create<ProfilesState>()(
       switchProfile: (id) => set({ activeProfileId: id }),
       deleteProfile: (id) =>
         set((s) => {
-          localStorage.removeItem(progressStorageKey(id))
+          try {
+            localStorage.removeItem(progressStorageKey(id))
+          } catch (e) {
+            // QuotaExceededError/SecurityError (Safari private mode) — the profile
+            // is still removed from state below; only the orphaned progress blob
+            // is left behind in storage.
+            console.warn('lingoforge: failed to remove progress from localStorage', e)
+          }
           return {
             profiles: s.profiles.filter((p) => p.id !== id),
             activeProfileId: s.activeProfileId === id ? null : s.activeProfileId,
