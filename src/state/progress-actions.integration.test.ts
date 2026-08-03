@@ -11,7 +11,6 @@ vi.hoisted(() => {
 })
 
 import { useProgress } from './progress'
-import { progressStorageKey } from './profiles'
 import { computeStreak } from './progress'
 import { BADGES } from './badges'
 

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { ErrorBoundary, type ErrorBoundaryFallbackProps } from './ErrorBoundary'
 
@@ -26,7 +27,7 @@ describe('ErrorBoundary', () => {
   it('logs caught errors to console and local log store', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {})
-    const getItemSpy = vi.spyOn(localStorage, 'getItem').mockReturnValue(null)
+    vi.spyOn(localStorage, 'getItem').mockReturnValue(null)
 
     const boundary = new ErrorBoundary({ children: null }, {})
     boundary.componentDidCatch(sampleError)
@@ -62,7 +63,9 @@ describe('ErrorBoundary', () => {
 
   it('renders custom fallback when provided', () => {
     const fallback = ({ error }: ErrorBoundaryFallbackProps) => <div data-custom>{error.message}</div>
-    const boundary = new ErrorBoundary({ children: null, fallback }, { hasError: true, error: sampleError })
-    // JSX output is not required for acceptance; correctness is covered by props typing above.
+    const boundary = new ErrorBoundary({ children: null, fallback }, {})
+    boundary.state = { hasError: true, error: sampleError }
+    const rendered = boundary.render() as ReactElement<{ children: string }>
+    expect(rendered.props.children).toBe('boom')
   })
 })

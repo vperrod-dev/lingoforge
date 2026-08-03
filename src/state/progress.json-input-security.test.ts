@@ -129,7 +129,7 @@ describe('importData/exportData/loadForProfile JSON security', () => {
     })
 
     it('does not throw on large arrays of strings payloads', () => {
-      const big = new Array(20000).fill('x').map((x, i) => ({ opts: x.repeat(100) }))
+      const big = new Array(20000).fill('x').map((x) => ({ opts: x.repeat(100) }))
       const payload = JSON.stringify({
         xp: 0,
         activeCourse: 'ru',

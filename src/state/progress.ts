@@ -28,7 +28,7 @@ export interface ProgressData {
   courses: Partial<Record<CourseId, CourseProgress>>
 }
 
-const emptyProgress = (course: CourseId = 'ru'): ProgressData => ({
+export const emptyProgress = (course: CourseId = 'ru'): ProgressData => ({
   xp: 0,
   activeCourse: course,
   dailyGoalMinutes: 10,
