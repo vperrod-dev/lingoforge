@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { BADGES } from './badges'
+import { computeStreak } from './progress'
 import type { ProgressData } from './progress'
 
 const emptyData = (over: Partial<ProgressData> = {}): ProgressData => ({
@@ -12,7 +13,10 @@ const emptyData = (over: Partial<ProgressData> = {}): ProgressData => ({
   ...over,
 })
 
-const course = (lessonCompletions: Record<string, number> = {}, srsItems: Record<string, unknown> = {}) => ({
+const course = (
+  lessonCompletions: Record<string, number> = {},
+  srsItems: Record<string, unknown> = {},
+) => ({
   lessonCompletions,
   srsItems: srsItems as ProgressData['courses']['ru'] extends infer C
     ? C extends { srsItems: infer S }
@@ -23,7 +27,7 @@ const course = (lessonCompletions: Record<string, number> = {}, srsItems: Record
 
 const badge = (id: string) => BADGES.find((b) => b.id === id)!
 
-// streak badges evaluate against the real clock — build logs relative to today
+// streak/time helpers use the real clock, matching original test behavior
 const dayLog = (daysAgo: number[]): ProgressData['dailyLog'] => {
   const out: ProgressData['dailyLog'] = {}
   for (const ago of daysAgo) {
@@ -33,6 +37,17 @@ const dayLog = (daysAgo: number[]): ProgressData['dailyLog'] => {
     out[key] = { minutes: 10, xp: 0, lessons: 0 }
   }
   return out
+}
+
+const todayKey = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const dayKey = (daysAgo: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 describe('BADGES', () => {
@@ -110,5 +125,92 @@ describe('xp-500 / xp-1000', () => {
   })
   it('xp-1000 is earned at >= 1000', () => {
     expect(badge('xp-1000').earned(emptyData({ xp: 1000 }))).toBe(true)
+  })
+})
+
+describe('computeStreak interaction', () => {
+  it('consecutive met goal days produce correct streak length', () => {
+    const log = dayLog([0, 1, 2, 3, 4])
+    expect(computeStreak(log, 10)).toBe(5)
+  })
+
+  it('missed yesterday breaks streak even if older consecutive days exist', () => {
+    const log: ProgressData['dailyLog'] = {
+      [todayKey()]: { minutes: 0, xp: 0, lessons: 0 },
+      [dayKey(1)]: { minutes: 0, xp: 0, lessons: 0 },
+      [dayKey(3)]: { minutes: 10, xp: 0, lessons: 1 },
+      [dayKey(4)]: { minutes: 10, xp: 0, lessons: 1 },
+    }
+    expect(computeStreak(log, 10)).toBe(0)
+  })
+
+  it('uses lessons instead of minutes when goal not met by minutes', () => {
+    expect(computeStreak({ [todayKey()]: { minutes: 0, xp: 0, lessons: 1 }, [dayKey(1)]: { minutes: 0, xp: 0, lessons: 1 } }, 10)).toBe(2)
+  })
+})
+
+describe('multiple badges simultaneously', () => {
+  it('can award several different badges from the same state', () => {
+    const data = emptyData({
+      xp: 600,
+      dailyLog: dayLog([0, 1, 2]),
+      courses: {
+        ru: course(
+          { l1: 1 },
+          Array.from({ length: 50 }, (_, i) => [`w${i}`, {}] as const).reduce(
+            (a, [k, v]) => ({ ...a, [k]: v }),
+            {} as Record<string, unknown>,
+          ),
+        ),
+      },
+    })
+    const ids = BADGES.filter((b) => b.earned(data)).map((b) => b.id)
+    expect(ids).toEqual(
+      expect.arrayContaining(['first-lesson', 'streak-3', 'words-50', 'xp-500']),
+    )
+  })
+})
+
+describe('badge re-awarding / idempotency', () => {
+  it("criteria continue to yield earned when state improves", () => {
+    const base = emptyData({ xp: 1000 })
+    expect(badge('xp-1000').earned(base)).toBe(true)
+    expect(badge('xp-1000').earned({ ...base, xp: 1500 })).toBe(true)
+  })
+
+  it("remains false when criteria fall below threshold", () => {
+    expect(badge('xp-1000').earned(emptyData({ xp: 999 }))).toBe(false)
+  })
+
+  it("does not earn the same badge id twice when mapped across BADGES", () => {
+    const data = emptyData({
+      xp: 0,
+      dailyLog: dayLog([0, 1, 2]),
+      courses: {
+        ru: course(
+          { l1: 1 },
+          Object.fromEntries(Array.from({ length: 60 }, (_, i) => [`w${i}`, {}])),
+        ),
+      },
+    })
+    const ids = BADGES.filter((b) => b.earned(data)).map((b) => b.id)
+    const unique = new Set(ids)
+    expect(unique.size).toBe(ids.length)
+  })
+
+  it("earnings return a unique fixed set across multiple awardable badges", () => {
+    const data = emptyData({
+      xp: 600,
+      dailyLog: dayLog([0, 1, 2]),
+      courses: {
+        ru: course(
+          { l1: 1 },
+          Object.fromEntries(Array.from({ length: 50 }, (_, i) => [`w${i}`, {}])),
+        ),
+      },
+    })
+    const ids = BADGES.filter((b) => b.earned(data)).map((b) => b.id)
+    expect(ids).toEqual(expect.arrayContaining(['first-lesson', 'streak-3', 'words-50', 'xp-500']))
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })

@@ -251,5 +251,52 @@ export const readings: Record<CourseId, ReadingText[]> = {
         },
       ],
     },
+    {
+      id: 'es-read-market',
+      title: 'En el mercado',
+      level: 'A2',
+      kind: 'story',
+      body: 'Hoy voy al mercado con mi madre. Hay muchas frutas y verduras.\n\nEl tomate es rojo. El pan es barato. Quiero comprar manzanas y peras.',
+      translation:
+        'Today I am going to the market with my mother. There are many fruits and vegetables. The tomato is red. The bread is cheap. I want to buy apples and pears.',
+      glossary: {
+        'mercado': 'market',
+        'madre': 'mother',
+        'frutas': 'fruits',
+        'verduras': 'vegetables',
+        'tomate': 'tomato',
+        'rojo': 'red',
+        'pan': 'bread',
+        'barato': 'cheap',
+        'comprar': 'to buy',
+        'manzanas': 'apples',
+        'peras': 'pears',
+      },
+    },
+    {
+      id: 'es-dlg-doctor',
+      title: 'En la consulta',
+      level: 'A2',
+      kind: 'dialogue',
+      turns: [
+        { speaker: 'Doctor', text: 'Buenos días. ¿Cómo está?', translation: 'Good morning. How are you?' },
+        { speaker: 'Paciente', text: 'Estoy enfermo. Tengo dolor de cabeza.', translation: 'I am sick. I have a headache.' },
+        { speaker: 'Doctor', text: 'Descansa y bebe agua.', translation: 'Rest and drink water.' },
+        { speaker: 'Paciente', text: 'Gracias, doctor.', translation: 'Thank you, doctor.' },
+      ],
+      glossary: { 'consulta': 'doctor\'s office', 'enfermo': 'sick', 'dolor': 'pain', 'cabeza': 'head', 'descansa': 'rest', 'agua': 'water' },
+      questions: [
+        {
+          q: 'What is wrong with the patient?',
+          options: ['Headache', 'Stomach', 'Fever', 'Cold'],
+          correctIndex: 0,
+        },
+        {
+          q: 'What does the doctor advise?',
+          options: ['Rest and drink water', 'Run', 'Eat more', 'Sleep all day'],
+          correctIndex: 0,
+        },
+      ],
+    },
   ],
 }

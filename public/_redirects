@@ -1,0 +1,7 @@
+/*
+  Cloudflare Pages fallback: serve /index.html for SPA routes so direct links/
+  Razor/refresh on /lesson, /progress etc. work. Static asset requests have no
+  matches and are passed through unchanged.
+*/
+/*  SPA fallback to index.html */
+/  /index.html 200

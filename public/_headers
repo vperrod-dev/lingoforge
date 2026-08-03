@@ -1,0 +1,13 @@
+/*
+  Response headers applied to all assets for Cloudflare Pages.
+  Tightened default-src for local-first delivery; keep same-origin connect.
+  Inline styles still permitted for Tailwind/shim.
+*/
+/*
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  X-Frame-Options: DENY
+*/

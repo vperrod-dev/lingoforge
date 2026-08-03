@@ -76,6 +76,25 @@ describe.each(courseList)('reading content $id', (course) => {
     }
   })
 
+  it('glossary keys are non-empty strings', () => {
+    for (const t of texts) {
+      for (const key of Object.keys(t.glossary ?? {})) {
+        expect(key.trim().length, `${t.id}:${key}`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('comprehension questions are well-formed', () => {
+    for (const t of texts) {
+      const questions = t.questions ?? []
+      for (const q of questions) {
+        expect(q.options.length, `${t.id}:${q.q}`).toBeGreaterThanOrEqual(2)
+        expect(q.correctIndex).toBeGreaterThanOrEqual(0)
+        expect(q.correctIndex).toBeLessThan(q.options.length)
+      }
+    }
+  })
+
   it('comprehension answers do not all land on the same button', () => {
     const uniform: string[] = []
     for (const t of texts) {
@@ -106,6 +125,14 @@ describe.each(courseList)('phrasebook content $id', (course) => {
   it('has unique pack ids', () => {
     const ids = packs.map((p) => p.id)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('pack phrases are non-empty and unique within pack', () => {
+    for (const pack of packs) {
+      const phrases = pack.phrases.map((p) => p.text.trim())
+      expect(phrases.length, `${pack.id} has phrases`).toBeGreaterThan(0)
+      expect(new Set(phrases).size, `${pack.id} duplicate phrases`).toBe(phrases.length)
+    }
   })
 
   it('phrase vocabIds reference existing vocab', () => {

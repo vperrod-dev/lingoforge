@@ -1,0 +1,43 @@
+{
+  "xp": 42,
+  "activeCourse": "ru",
+  "dailyGoalMinutes": 10,
+  "dailyLog": {
+    "2026-07-01": {
+      "minutes": 5,
+      "xp": 20,
+      "lessons": 1
+    },
+    "2026-07-02": {
+      "minutes": 10,
+      "xp": 15,
+      "lessons": 2
+    }
+  },
+  "badges": {
+    "first-lesson": 1751328000000,
+    "ten-lessons": 1751414400000
+  },
+  "courses": {
+    "ru": {
+      "lessonCompletions": {
+        "lesson-a": 3,
+        "lesson-b": 1
+      },
+      "srsItems": {
+        "vocab-1": {
+          "vocabId": "vocab-1",
+          "stability": 1,
+          "difficulty": 0.3,
+          "dueAt": 0,
+          "reps": 5,
+          "lapses": 1
+        }
+      }
+    },
+    "es": {
+      "lessonCompletions": {},
+      "srsItems": {}
+    }
+  }
+}

@@ -118,13 +118,34 @@ describe('loadForProfile', () => {
     it('loads course progress for a non-default active course', () => {
       const blob = dataFor({
         activeCourse: 'es',
-        courses: { es: { lessonCompletions: { 'a': 2 }, srsItems: { v: { reps: 1 } } } },
+        courses: {
+          es: {
+            lessonCompletions: { a: 2 },
+            srsItems: {
+              v: {
+                vocabId: 'v',
+                stability: 1,
+                difficulty: 0.5,
+                dueAt: 0,
+                reps: 1,
+                lapses: 0,
+              },
+            },
+          },
+        },
       })
       store.set(progressStorageKey('p-course'), JSON.stringify(blob))
       useProgress.getState().loadForProfile('p-course', 'ru')
       expect(useProgress.getState().data.activeCourse).toBe('es')
       expect(useProgress.getState().data.courses.es!.lessonCompletions['a']).toBe(2)
-      expect(useProgress.getState().data.courses.es!.srsItems['v']).toEqual({ reps: 1 })
+      expect(useProgress.getState().data.courses.es!.srsItems['v']).toEqual({
+        vocabId: 'v',
+        stability: 1,
+        difficulty: 0.5,
+        dueAt: 0,
+        reps: 1,
+        lapses: 0,
+      })
     })
   })
 

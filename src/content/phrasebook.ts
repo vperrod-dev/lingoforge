@@ -70,6 +70,30 @@ export const phrasebook: Record<CourseId, PhrasePack[]> = {
         { text: 'Сколько до центра?', translation: 'How much to the centre?' },
       ],
     },
+    {
+      id: 'ru-emergency',
+      title: 'Emergency',
+      icon: 'phone',
+      phrases: [
+        { text: 'Помогите!', translation: 'Help!' },
+        { text: 'Полиция!', translation: 'Police!' },
+        { text: 'Где больница?', translation: 'Where is the hospital?' },
+        { text: 'Вызовите скорую.', translation: 'Call an ambulance.' },
+        { text: 'Я потерялся.', translation: 'I am lost.' },
+      ],
+    },
+    {
+      id: 'ru-education',
+      title: 'Education',
+      icon: 'book-open',
+      phrases: [
+        { text: 'Где библиотека?', translation: 'Where is the library?' },
+        { text: 'Я учусь здесь.', translation: 'I study here.' },
+        { text: 'Это книга.', translation: 'This is a book.' },
+        { text: 'Я не понял.', translation: 'I did not understand.' },
+        { text: 'Повторите, пожалуйста.', translation: 'Repeat, please.' },
+      ],
+    },
   ],
   es: [
     {
@@ -129,6 +153,30 @@ export const phrasebook: Record<CourseId, PhrasePack[]> = {
         { text: 'Voy a casa.', translation: 'I am going home.' },
         { text: '¿Me puede llamar un taxi?', translation: 'Can you call me a taxi?' },
         { text: '¿Cuánto cuesta al centro?', translation: 'How much to the centre?' },
+      ],
+    },
+    {
+      id: 'es-emergency',
+      title: 'Emergency',
+      icon: 'phone',
+      phrases: [
+        { text: '¡Ayuda!', translation: 'Help!' },
+        { text: '¡Policía!', translation: 'Police!' },
+        { text: '¿Dónde está el hospital?', translation: 'Where is the hospital?' },
+        { text: 'Llame una ambulancia.', translation: 'Call an ambulance.' },
+        { text: 'Estoy perdido.', translation: 'I am lost.' },
+      ],
+    },
+    {
+      id: 'es-education',
+      title: 'Education',
+      icon: 'book-open',
+      phrases: [
+        { text: '¿Dónde está la biblioteca?', translation: 'Where is the library?' },
+        { text: 'Estudio aquí.', translation: 'I study here.' },
+        { text: 'Este es un libro.', translation: 'This is a book.' },
+        { text: 'No entiendo.', translation: 'I do not understand.' },
+        { text: 'Repita, por favor.', translation: 'Repeat, please.' },
       ],
     },
   ],

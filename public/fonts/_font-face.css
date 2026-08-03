@@ -1,0 +1,70 @@
+@font-face {
+  font-family: 'Baloo 2';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Baloo 2'), url('/fonts/wXK0E3kTposypRydzVT08TS3JnAmtdgazapv.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Baloo 2';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local('Baloo 2'), url('/fonts/wXK0E3kTposypRydzVT08TS3JnAmtdgozapv.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Baloo 2';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Baloo 2'), url('/fonts/wXK0E3kTposypRydzVT08TS3JnAmtdiayqpv.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Baloo 2';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Baloo 2'), url('/fonts/wXK0E3kTposypRydzVT08TS3JnAmtdj9yqpv.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Baloo 2';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: local('Baloo 2'), url('/fonts/wXK0E3kTposypRydzVT08TS3JnAmtdjEyqpv.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Nunito'), url('/fonts/XRXI3I6Li01BKofiOc5wtlZ2di8HDDsmRTM.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local('Nunito'), url('/fonts/XRXI3I6Li01BKofiOc5wtlZ2di8HDFwmRTM.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Nunito'), url('/fonts/XRXI3I6Li01BKofiOc5wtlZ2di8HDGUmRTM.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Nunito'), url('/fonts/XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhRTM.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: local('Nunito'), url('/fonts/XRXI3I6Li01BKofiOc5wtlZ2di8HDLshRTM.ttf') format('truetype');
+}

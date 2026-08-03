@@ -1,0 +1,17 @@
+{
+  "xp": 100,
+  "activeCourse": "ru",
+  "dailyGoalMinutes": 15,
+  "dailyLog": {
+    "2026-07-01": { "minutes": 10, "xp": 50, "lessons": 2 }
+  },
+  "badges": { "first-lesson": 1751328000000 },
+  "courses": {
+    "ru": {
+      "lessonCompletions": { "lsn-1": 3 },
+      "srsItems": {
+        "v1": { "vocabId": "v1", "stability": 1.2, "difficulty": 3, "dueAt": 1750000000000, "reps": 2, "lapses": 0 }
+      }
+    }
+  }
+}
