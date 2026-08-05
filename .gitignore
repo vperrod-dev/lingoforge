@@ -29,8 +29,6 @@ public/audio/
 .venv-deploy/
 
 # Unrelated project checkouts living alongside this repo — never track
-KinkLink_Admin/
-KinkLink_Frontend/
 
 # package-lock.json is the source of truth (scripts/deploy.sh runs npm ci)
 pnpm-lock.yaml
