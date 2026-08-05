@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { shuffle } from '../engine/seeded-random'
 
 interface Pair {
   left: string
@@ -13,7 +14,7 @@ interface Props {
 
 /** Match game: all pairs must be matched; mistakes allowed but tracked. */
 export function MatchingExercise({ pairs, onAnswer }: Props) {
-  const [rights] = useState(() => [...pairs].sort(() => Math.random() - 0.5))
+  const [rights] = useState(() => shuffle(pairs))
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [matched, setMatched] = useState<Set<string>>(new Set())
   const [shake, setShake] = useState<string | null>(null)

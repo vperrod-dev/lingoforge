@@ -9,10 +9,7 @@ import { renderExercise } from '../exercises/render'
 import { useProgress } from '../state/progress'
 import { ClayButton } from '../ui/ClayButton'
 import { playFanfare } from '../audio/sfx'
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
+import { shuffle } from '../engine/seeded-random'
 
 function reviewExercise(course: Course, vocab: VocabItem): ExerciseInstance {
   const distractors = shuffle(course.vocab.filter((v) => v.id !== vocab.id)).slice(0, 3)

@@ -9,7 +9,9 @@ export function mulberry32(seed: number) {
   }
 }
 
-function shuffle<T>(arr: T[], rng = Math.random): T[] {
+/** Fisher-Yates. `sort(() => Math.random() - 0.5)` is not a fair shuffle — it
+ * biases items toward their original position. */
+export function shuffle<T>(arr: T[], rng = Math.random): T[] {
   const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1))

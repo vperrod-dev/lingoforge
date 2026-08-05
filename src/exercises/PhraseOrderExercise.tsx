@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ClayButton } from '../ui/ClayButton'
+import { shuffle } from '../engine/seeded-random'
 
 interface Phrase {
   line: string
@@ -13,7 +14,7 @@ interface Props {
 
 export function PhraseOrderExercise({ phrases, onAnswer }: Props) {
   const [shuffled] = useState(() =>
-    phrases.map((p, i) => ({ ...p, originalIndex: i })).sort(() => Math.random() - 0.5),
+    shuffle(phrases.map((p, i) => ({ ...p, originalIndex: i }))),
   )
 
   const [placed, setPlaced] = useState<typeof shuffled>([])

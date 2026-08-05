@@ -3,6 +3,7 @@ import { Volume2 } from 'lucide-react'
 import { speak } from '../audio/tts'
 import { ClayButton } from '../ui/ClayButton'
 import { isCorrectAnswer } from '../engine/answer-check'
+import { shuffle } from '../engine/seeded-random'
 
 interface Props {
   sentence: string
@@ -20,7 +21,7 @@ interface Chip {
 export function ReorderDictationExercise({ sentence, ttsLang, answerChips, distractorChips, onAnswer }: Props) {
   const [bank] = useState<Chip[]>(() => {
     const all = [...answerChips, ...distractorChips].map((word, id) => ({ id, word }))
-    return all.sort(() => Math.random() - 0.5)
+    return shuffle(all)
   })
 
   const [placed, setPlaced] = useState<Chip[]>([])
