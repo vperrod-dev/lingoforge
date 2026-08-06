@@ -143,6 +143,15 @@ function distractorLemmas(course: Course, exclude: VocabItem, n: number): string
   return sample([...new Set(pool.map((v) => v.lemma))], n)
 }
 
+/** Last-resort distractor lemma when the usual pools come up empty (tiny course) —
+ *  any other lemma in the course, excluded by text rather than by vocab id/lemma. */
+function anyOtherLemma(course: Course, excludeText: string): string | undefined {
+  const pool = [...new Set(course.vocab.map((v) => v.lemma))].filter(
+    (l) => l.toLowerCase() !== excludeText.toLowerCase(),
+  )
+  return pool.length > 0 ? sample(pool, 1)[0] : undefined
+}
+
 export function choiceToEnglish(course: Course, vocab: VocabItem): ExerciseInstance {
   const options = shuffle([vocab.translation, ...distractorTranslations(course, vocab, 3)])
   return {
@@ -301,10 +310,15 @@ function splitPunctuation(token: string): { core: string; suffix: string } {
   return { core: match?.[1] ?? token, suffix: match?.[2] ?? '' }
 }
 
+/**
+ * Returns null when the course is too small to produce any wrong-word swap
+ * (no alternate form and no other lemma anywhere in the course) — callers should
+ * skip this exercise for the sentence rather than render a broken swap.
+ */
 export function errorCorrectionExercise(
   course: Course,
   sentence: { text: string; translation: string; vocabIds: string[] },
-): ExerciseInstance {
+): ExerciseInstance | null {
   const tokens = sentence.text.split(/\s+/)
   const vocabInSentence = sentence.vocabIds
     .map((id) => course.vocab.find((v) => v.id === id))
@@ -328,15 +342,19 @@ export function errorCorrectionExercise(
   const original = tokens[errorIndex]
   const { core, suffix } = splitPunctuation(original)
 
-  let wrongCore: string
+  let wrongCore: string | undefined
   if (pick?.vocab) {
     const altForms = [pick.vocab.lemma, ...(pick.vocab.forms ?? [])].filter(
       (f) => f.toLowerCase() !== core.toLowerCase(),
     )
     wrongCore = altForms.length > 0 ? sample(altForms, 1)[0] : distractorLemmas(course, pick.vocab, 1)[0]
   } else {
-    wrongCore = sample([...new Set(course.vocab.map((v) => v.lemma))], 1)[0]
+    wrongCore = anyOtherLemma(course, core)
   }
+  wrongCore ??= anyOtherLemma(course, core)
+  // Course has no other lemma at all (or only alt-forms of `core` itself) — no
+  // swap is possible, so there's no valid errorCorrection exercise to build.
+  if (!wrongCore) return null
 
   const swapped = [...tokens]
   swapped[errorIndex] = wrongCore + suffix
@@ -440,9 +458,10 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
       exercises.push(speakExercise(v))
     }
   }
-  // Error correction: spot the wrong word
+  // Error correction: spot the wrong word (null when the course is too small to swap in a wrong form)
   for (const s of sample(lesson.sentences, Math.min(1, lesson.sentences.length))) {
-    exercises.push(errorCorrectionExercise(course, s))
+    const errorCorrection = errorCorrectionExercise(course, s)
+    if (errorCorrection) exercises.push(errorCorrection)
   }
   // Reorder dictation: hear it, arrange it (no transcript shown)
   for (const s of sample(lesson.sentences, Math.min(1, lesson.sentences.length))) {

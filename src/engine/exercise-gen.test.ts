@@ -38,7 +38,7 @@ describe('errorCorrectionExercise', () => {
   it('points errorIndex at the token that was swapped and keeps the rest intact', () => {
     for (let i = 0; i < 20; i++) {
       const ex = errorCorrectionExercise(ru, sentence)
-      if (ex.kind !== 'errorCorrection') throw new Error('wrong kind')
+      if (!ex || ex.kind !== 'errorCorrection') throw new Error('wrong kind')
       const original = sentence.text.split(/\s+/)
       expect(ex.tokens).toHaveLength(original.length)
       expect(ex.errorIndex).toBe(0) // only token 0 matches the sentence vocab
@@ -52,9 +52,21 @@ describe('errorCorrectionExercise', () => {
     const punct = { text: `Где ${vocab.lemma}?`, translation: 'where?', vocabIds: [vocab.id] }
     for (let i = 0; i < 20; i++) {
       const ex = errorCorrectionExercise(ru, punct)
-      if (ex.kind !== 'errorCorrection') throw new Error('wrong kind')
+      if (!ex || ex.kind !== 'errorCorrection') throw new Error('wrong kind')
       expect(ex.errorIndex).toBe(1)
       expect(ex.tokens[1].endsWith('?')).toBe(true)
+    }
+  })
+
+  it('never swaps in the literal string "undefined" when the vocab word has no alternate forms and the course is too small for a distractor lemma', () => {
+    // Single-vocab, single-form "course" — the exact conditions that used to leave
+    // wrongCore undefined: no altForms, and distractorLemmas has nothing to exclude to.
+    const soleVocab = { id: 'v1', lemma: 'hola', translation: 'hi', forms: [] }
+    const tinyCourse = { ...ru, vocab: [soleVocab] } as typeof ru
+    const tinySentence = { text: `${soleVocab.lemma} tú?`, translation: 'hi you?', vocabIds: [soleVocab.id] }
+    for (let i = 0; i < 20; i++) {
+      const ex = errorCorrectionExercise(tinyCourse, tinySentence)
+      expect(ex).toBeNull()
     }
   })
 })
