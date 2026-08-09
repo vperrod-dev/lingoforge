@@ -1,6 +1,7 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { generateVision } from './ollama'
-import { identifyObjects } from './vision'
+import { identifyObjects, captureFrame } from './vision'
 
 vi.mock('./ollama', () => ({ generateVision: vi.fn() }))
 const mockGenerateVision = vi.mocked(generateVision)
@@ -50,5 +51,50 @@ describe('identifyObjects', () => {
   it('throws when objects were returned but all are malformed', async () => {
     mockGenerateVision.mockResolvedValue({ objects: [{ name_en: 42 }] })
     await expect(identifyObjects('img', 'es-ES')).rejects.toThrow('unusable object data')
+  })
+})
+
+describe('captureFrame', () => {
+  let canvas: HTMLCanvasElement | undefined
+  let drawImage: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    drawImage = vi.fn()
+    const realCreateElement = document.createElement.bind(document)
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = realCreateElement(tag)
+      if (tag === 'canvas') canvas = el as HTMLCanvasElement
+      return el
+    })
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage,
+    } as unknown as CanvasRenderingContext2D)
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/jpeg;base64,AAA')
+  })
+
+  const fakeVideo = (videoWidth: number, videoHeight: number) =>
+    ({ videoWidth, videoHeight }) as HTMLVideoElement
+
+  it('downscales a landscape frame to the max dimension, preserving aspect ratio', () => {
+    captureFrame(fakeVideo(1280, 960))
+    expect(canvas!.width).toBe(640)
+    expect(canvas!.height).toBe(480)
+    expect(drawImage).toHaveBeenCalledWith(expect.anything(), 0, 0, 640, 480)
+  })
+
+  it('downscales a portrait frame the same way', () => {
+    captureFrame(fakeVideo(960, 1280))
+    expect(canvas!.width).toBe(480)
+    expect(canvas!.height).toBe(640)
+  })
+
+  it('does not upscale a frame already under the max dimension', () => {
+    captureFrame(fakeVideo(320, 240))
+    expect(canvas!.width).toBe(320)
+    expect(canvas!.height).toBe(240)
+  })
+
+  it('returns the base64 payload without the data URL prefix', () => {
+    expect(captureFrame(fakeVideo(320, 240))).toBe('AAA')
   })
 })

@@ -70,11 +70,19 @@ Rules:
   }))
 }
 
+// Vision model only needs enough resolution to name objects, not the native
+// capture size (up to 1280x960) — downscale before encoding to shrink the
+// payload sent to Ollama.
+const MAX_CAPTURE_DIMENSION = 640
+
 export function captureFrame(video: HTMLVideoElement): string {
+  const scale = Math.min(1, MAX_CAPTURE_DIMENSION / Math.max(video.videoWidth, video.videoHeight))
+  const width = Math.round(video.videoWidth * scale)
+  const height = Math.round(video.videoHeight * scale)
   const canvas = document.createElement('canvas')
-  canvas.width = video.videoWidth
-  canvas.height = video.videoHeight
+  canvas.width = width
+  canvas.height = height
   const ctx = canvas.getContext('2d')!
-  ctx.drawImage(video, 0, 0)
+  ctx.drawImage(video, 0, 0, width, height)
   return canvas.toDataURL('image/jpeg', 0.8).split(',')[1]
 }
