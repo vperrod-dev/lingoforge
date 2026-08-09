@@ -36,6 +36,12 @@ function isVisionObject(v: unknown): v is VisionResponse['objects'][number] {
   )
 }
 
+// The model's response feeds straight into layout percentages and on-screen text —
+// clamp/cap it instead of trusting an adversarial or malformed reply.
+const MAX_TEXT_LENGTH = 300
+const capText = (s: string) => (s.length > MAX_TEXT_LENGTH ? s.slice(0, MAX_TEXT_LENGTH) : s)
+const clampPercent = (n: number) => Math.min(100, Math.max(0, n))
+
 export async function identifyObjects(
   imageBase64: string,
   ttsLang: string,
@@ -61,12 +67,12 @@ Rules:
     throw new Error('The AI returned unusable object data — please try again')
   }
   return objects.map((o) => ({
-    nameEn: o.name_en,
-    nameTarget: o.name_target,
-    pronunciation: o.pronunciation,
-    example: o.example,
-    exampleTranslation: o.exampleTranslation,
-    bbox: o.bbox,
+    nameEn: capText(o.name_en),
+    nameTarget: capText(o.name_target),
+    pronunciation: capText(o.pronunciation),
+    example: capText(o.example),
+    exampleTranslation: capText(o.exampleTranslation),
+    bbox: o.bbox.map(clampPercent) as [number, number, number, number],
   }))
 }
 

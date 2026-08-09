@@ -52,6 +52,23 @@ describe('identifyObjects', () => {
     mockGenerateVision.mockResolvedValue({ objects: [{ name_en: 42 }] })
     await expect(identifyObjects('img', 'es-ES')).rejects.toThrow('unusable object data')
   })
+
+  it('clamps bbox coordinates outside the 0-100 percent range', async () => {
+    mockGenerateVision.mockResolvedValue({
+      objects: [{ ...validObject, bbox: [-10, 40, 150, 200] }],
+    })
+    const [result] = await identifyObjects('img', 'es-ES')
+    expect(result.bbox).toEqual([0, 40, 100, 100])
+  })
+
+  it('caps overly long text fields instead of passing them through to the UI', async () => {
+    const huge = 'x'.repeat(1000)
+    mockGenerateVision.mockResolvedValue({
+      objects: [{ ...validObject, example: huge }],
+    })
+    const [result] = await identifyObjects('img', 'es-ES')
+    expect(result.example).toHaveLength(300)
+  })
 })
 
 describe('captureFrame', () => {
