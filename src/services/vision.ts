@@ -1,4 +1,5 @@
 import { generateVision } from './ollama'
+import { langName } from './lang-names'
 
 export interface DetectedObject {
   nameEn: string
@@ -35,16 +36,11 @@ function isVisionObject(v: unknown): v is VisionResponse['objects'][number] {
   )
 }
 
-const LANG_NAMES: Record<string, string> = {
-  'ru-RU': 'Russian',
-  'es-ES': 'Spanish',
-}
-
 export async function identifyObjects(
   imageBase64: string,
   ttsLang: string,
 ): Promise<DetectedObject[]> {
-  const lang = LANG_NAMES[ttsLang] ?? 'Spanish'
+  const lang = langName(ttsLang)
   const prompt = `Look at this image. Identify up to 8 distinct objects visible in the photo.
 
 Return JSON: { "objects": [{ "name_en": "English name", "name_target": "name in ${lang}", "pronunciation": "phonetic hint for English speaker", "example": "example sentence in ${lang} using this word", "exampleTranslation": "English translation of example", "bbox": [x1, y1, x2, y2] }] }

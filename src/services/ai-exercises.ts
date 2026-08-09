@@ -1,4 +1,5 @@
 import { generateJSON } from './ollama'
+import { langName } from './lang-names'
 import type { ExerciseInstance } from '../engine/exercise-gen'
 import { sample } from '../engine/exercise-gen'
 
@@ -26,17 +27,12 @@ function isGeneratedVocab(v: unknown): v is GeneratedVocab {
   )
 }
 
-const LANG_NAMES: Record<string, string> = {
-  'ru-RU': 'Russian',
-  'es-ES': 'Spanish',
-}
-
 export async function generateTopicVocab(
   topic: string,
   ttsLang: string,
   level: string = 'A2',
 ): Promise<GeneratedVocab[]> {
-  const lang = LANG_NAMES[ttsLang] ?? 'Spanish'
+  const lang = langName(ttsLang)
   const prompt = `You are a ${lang} language tutor. Generate exactly 12 vocabulary items for the topic "${topic}" at ${level} level.
 
 Return JSON: { "vocab": [{ "word": "the word in ${lang}", "translation": "English translation", "pronunciation": "phonetic pronunciation hint", "example": "example sentence in ${lang}", "exampleTranslation": "English translation of example" }] }

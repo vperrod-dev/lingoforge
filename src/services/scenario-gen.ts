@@ -1,4 +1,5 @@
 import { generateJSON } from './ollama'
+import { langName } from './lang-names'
 import type { ExerciseInstance } from '../engine/exercise-gen'
 import { sample } from '../engine/exercise-gen'
 
@@ -62,17 +63,12 @@ function filterValid<T>(list: unknown, isValid: (v: unknown) => v is T, label: s
   return valid
 }
 
-const LANG_NAMES: Record<string, string> = {
-  'ru-RU': 'Russian',
-  'es-ES': 'Spanish',
-}
-
 export async function generateScenario(
   situation: string,
   ttsLang: string,
   level: string = 'A2',
 ): Promise<ScenarioData> {
-  const lang = LANG_NAMES[ttsLang] ?? 'Spanish'
+  const lang = langName(ttsLang)
   const prompt = `You are a ${lang} language tutor. Create a complete lesson for the situation: "${situation}" at ${level} level.
 
 Return JSON: {
