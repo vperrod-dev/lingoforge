@@ -8,6 +8,10 @@ export interface VocabItem {
   forms?: string[]
   /** Pronunciation hint, e.g. transliteration for Russian */
   hint?: string
+  /** What the word literally/etymologically means, shown on flashcards */
+  literal?: string
+  /** Usage note (formality, false friends, roots), shown on flashcards */
+  note?: string
 }
 
 export interface PatternFrame {

@@ -1,4 +1,5 @@
 import type { Course } from '../types'
+import { topicVocab, topicUnits } from './ru-topics'
 
 export const ruCourse: Course = {
   id: 'ru',
@@ -222,6 +223,7 @@ export const ruCourse: Course = {
     { id: 'otkryt', lemma: 'открыт', translation: 'open / opened (passive)', forms: ['открыта', 'открыто'], hint: 'atkryt' },
     { id: 'zakryt', lemma: 'закрыт', translation: 'closed (passive)', forms: ['закрыта', 'закрыто'], hint: 'zakryt' },
     { id: 'sdelano', lemma: 'сделано', translation: 'done / made (passive)', hint: 'sdyelana' },
+    ...topicVocab,
   ],
   patterns: [
     {
@@ -1349,5 +1351,6 @@ export const ruCourse: Course = {
         },
       ],
     },
+    ...topicUnits,
   ],
 }

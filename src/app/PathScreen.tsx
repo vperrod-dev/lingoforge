@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
-import { Lock, Check, Star, Hand, Sparkles, Coffee, Package, Users, MessageCircle, MapPin, Home, Hash, Clock, Wand2, Theater, Camera, GraduationCap, ChevronDown, ChevronUp, BookOpen, MessagesSquare } from 'lucide-react'
+import { Lock, Check, Star, Hand, Sparkles, Coffee, Package, Users, MessageCircle, MapPin, Home, Hash, Clock, Wand2, Theater, Camera, GraduationCap, ChevronDown, ChevronUp, BookOpen, MessagesSquare, Layers } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { courses } from '../content'
 import type { CourseId } from '../content/types'
@@ -147,6 +147,16 @@ export function PathScreen() {
           </div>
         )}
       </div>
+
+      <Link to="/flashcards" className="clay clay-press flex items-center gap-4 border-ru bg-red-50 p-4">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-full border-3 border-red-700 bg-ru text-white">
+          <Layers aria-hidden />
+        </span>
+        <span className="grow text-left">
+          <span className="block font-display text-lg font-bold">Flashcards by topic</span>
+          <span className="text-sm text-fg-muted">Flip cards for travel, shopping, friends &amp; more — with audio</span>
+        </span>
+      </Link>
 
       <Link to="/topic-lesson" className="clay clay-press flex items-center gap-4 border-primary bg-indigo-50 p-4">
         <span className="flex size-12 shrink-0 items-center justify-center rounded-full border-3 border-indigo-700 bg-primary text-on-primary">

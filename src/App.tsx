@@ -20,6 +20,7 @@ const PointLearnScreen = lazy(() => import('./app/PointLearnScreen').then((m) =>
 const ReadingScreen = lazy(() => import('./app/ReadingScreen').then((m) => ({ default: m.ReadingScreen })))
 const ReadingPickerScreen = lazy(() => import('./app/ReadingPickerScreen').then((m) => ({ default: m.ReadingPickerScreen })))
 const PhrasebookScreen = lazy(() => import('./app/PhrasebookScreen').then((m) => ({ default: m.PhrasebookScreen })))
+const FlashcardsScreen = lazy(() => import('./app/FlashcardsScreen').then((m) => ({ default: m.FlashcardsScreen })))
 const StatsScreen = lazy(() => import('./app/StatsScreen').then((m) => ({ default: m.StatsScreen })))
 const AlphabetScreen = lazy(() => import('./app/AlphabetScreen').then((m) => ({ default: m.AlphabetScreen })))
 
@@ -57,6 +58,7 @@ export default function App() {
             <Route path="/" element={<PathScreen />} />
             <Route path="/alphabet" element={<AlphabetScreen />} />
             <Route path="/review" element={<ReviewScreen />} />
+            <Route path="/flashcards" element={<FlashcardsScreen />} />
             <Route path="/stats" element={<StatsScreen />} />
             <Route path="/topic-lesson" element={<TopicPickerScreen />} />
             <Route path="/scenario-lesson" element={<ScenarioPickerScreen />} />
