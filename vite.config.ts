@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -17,11 +17,22 @@ const stripCspMeta = {
 
 export default defineConfig(({ mode }) => {
   const singleFile = mode === 'singlefile'
+  const ollamaUrl = loadEnv(mode, process.cwd(), 'VITE_').VITE_OLLAMA_URL || 'http://localhost:11434'
+
+  // Keeps the CSP connect-src in sync with services/ollama.ts's BASE_URL so a
+  // build pointed at a remote Ollama instance (VITE_OLLAMA_URL) doesn't get
+  // silently blocked by a CSP still hardcoded to localhost.
+  const templateCsp = {
+    name: 'template-csp-ollama-url',
+    transformIndexHtml: (html: string) => html.replace('__OLLAMA_URL__', ollamaUrl),
+  }
+
   return {
   base: './',
   plugins: [
     react(),
     tailwindcss(),
+    templateCsp,
     ...(singleFile
       ? [viteSingleFile(), stripCspMeta]
       : [

@@ -37,6 +37,10 @@ the choice is stored per browser. Nothing is sent to the internet, everything el
 works without Ollama, and if it isn't running you get an inline "Ollama is not
 running" notice instead of a broken screen.
 
+To point a build at a remote Ollama instance (LAN device, self-hosted server)
+instead of `localhost:11434`, set `VITE_OLLAMA_URL` before `npm run build` —
+it's baked into both the client code and the CSP `connect-src` at build time.
+
 ## Adding content
 
 Courses are typed data in `src/content/courses/*.ts` (validated by `src/content/content.test.ts`). Add vocab/lessons/units there — no app code changes needed.
