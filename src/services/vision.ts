@@ -45,6 +45,7 @@ const clampPercent = (n: number) => Math.min(100, Math.max(0, n))
 export async function identifyObjects(
   imageBase64: string,
   ttsLang: string,
+  signal?: AbortSignal,
 ): Promise<DetectedObject[]> {
   const lang = langName(ttsLang)
   const prompt = `Look at this image. Identify up to 8 distinct objects visible in the photo.
@@ -57,7 +58,7 @@ Rules:
 - Use common, practical vocabulary
 - Example sentences should be simple A2 level`
 
-  const result = await generateVision<Partial<VisionResponse> | null>(prompt, imageBase64)
+  const result = await generateVision<Partial<VisionResponse> | null>(prompt, imageBase64, undefined, signal)
   const raw = Array.isArray(result?.objects) ? result.objects : []
   const objects = raw.filter(isVisionObject)
   if (objects.length < raw.length) {

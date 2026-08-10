@@ -103,6 +103,25 @@ describe('PointLearnScreen phase machine', () => {
     expect(await screen.findByText('No objects detected — try a different angle')).toBeTruthy()
   })
 
+  it('aborts the in-flight detection when unmounted mid-scan', async () => {
+    let resolveDetection!: (objs: (typeof detectedObject)[]) => void
+    mockIdentifyObjects.mockReturnValue(
+      new Promise((resolve) => {
+        resolveDetection = resolve
+      }),
+    )
+    const { unmount } = render(<PointLearnScreen />)
+    await screen.findByLabelText('Take photo')
+    snap()
+    await screen.findByText('Identifying objects...')
+
+    unmount()
+    resolveDetection([detectedObject])
+
+    const signal = mockIdentifyObjects.mock.calls[0][2]
+    expect(signal?.aborted).toBe(true)
+  })
+
   it('retrying from offline restarts the camera', async () => {
     mockIsOllamaOnline.mockResolvedValue(false)
     render(<PointLearnScreen />)

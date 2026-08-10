@@ -38,7 +38,14 @@ export function resetStatus() {
   _lastCheck = 0
 }
 
-export async function generate(prompt: string, system?: string): Promise<string> {
+// Callers (screens) pass an unmount signal so navigating away actually cancels
+// the request instead of leaving Ollama churning for up to 90s.
+function withTimeout(ms: number, signal?: AbortSignal): AbortSignal {
+  const timeout = AbortSignal.timeout(ms)
+  return signal ? AbortSignal.any([signal, timeout]) : timeout
+}
+
+export async function generate(prompt: string, system?: string, signal?: AbortSignal): Promise<string> {
   const body: GenerateRequest = {
     model: 'gemma2:9b',
     prompt,
@@ -51,7 +58,7 @@ export async function generate(prompt: string, system?: string): Promise<string>
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000),
+    signal: withTimeout(60_000, signal),
   })
   if (!r.ok) throw new Error(`Ollama ${r.status}: ${await r.text()}`)
   const data: GenerateResponse = await r.json()
@@ -85,8 +92,8 @@ function extractJSON(raw: string): string | null {
   return null
 }
 
-export async function generateJSON<T>(prompt: string, system?: string): Promise<T> {
-  const raw = await generate(prompt, system)
+export async function generateJSON<T>(prompt: string, system?: string, signal?: AbortSignal): Promise<T> {
+  const raw = await generate(prompt, system, signal)
   try {
     return JSON.parse(raw) as T
   } catch {
@@ -99,7 +106,7 @@ export async function generateJSON<T>(prompt: string, system?: string): Promise<
   }
 }
 
-export async function generateVision<T>(prompt: string, imageBase64: string, system?: string): Promise<T> {
+export async function generateVision<T>(prompt: string, imageBase64: string, system?: string, signal?: AbortSignal): Promise<T> {
   const body: GenerateRequest = {
     model: 'llava:13b',
     prompt,
@@ -113,7 +120,7 @@ export async function generateVision<T>(prompt: string, imageBase64: string, sys
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(90_000),
+    signal: withTimeout(90_000, signal),
   })
   if (!r.ok) throw new Error(`Ollama vision ${r.status}: ${await r.text()}`)
   const data: GenerateResponse = await r.json()

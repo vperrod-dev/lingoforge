@@ -20,6 +20,7 @@ export function PointLearnScreen() {
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const [phase, setPhase] = useState<Phase>('camera')
   const [errorMsg, setErrorMsg] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -54,10 +55,17 @@ export function PointLearnScreen() {
     return stopCamera
   }, [aiEnabled, startCamera, stopCamera])
 
+  // Cancel any in-flight vision request when the screen unmounts — the call can
+  // take up to 90s, and setState on an unmounted screen is a silent leak.
+  useEffect(() => () => abortRef.current?.abort(), [])
+
   const snap = async () => {
     if (!videoRef.current) return
+    const ac = new AbortController()
+    abortRef.current = ac
 
     const online = await isOllamaOnline()
+    if (ac.signal.aborted) return
     if (!online) {
       setPhase('offline')
       return
@@ -69,11 +77,13 @@ export function PointLearnScreen() {
     setPhase('scanning')
 
     try {
-      const detected = await identifyObjects(base64, course.ttsLang)
+      const detected = await identifyObjects(base64, course.ttsLang, ac.signal)
+      if (ac.signal.aborted) return
       if (detected.length === 0) throw new Error('No objects detected — try a different angle')
       setObjects(detected)
       setPhase('results')
     } catch (e) {
+      if (ac.signal.aborted) return
       setErrorMsg(e instanceof Error ? e.message : 'Detection failed')
       setPhase('error')
     }

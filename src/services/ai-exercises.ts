@@ -31,6 +31,7 @@ export async function generateTopicVocab(
   topic: string,
   ttsLang: string,
   level: string = 'A2',
+  signal?: AbortSignal,
 ): Promise<GeneratedVocab[]> {
   const lang = langName(ttsLang)
   const prompt = `You are a ${lang} language tutor. Generate exactly 12 vocabulary items for the topic "${topic}" at ${level} level.
@@ -43,7 +44,7 @@ Rules:
 - Example sentences should be simple and use the word in context
 - Pronunciation should help an English speaker approximate the sound`
 
-  const result = await generateJSON<Partial<TopicVocabResponse> | null>(prompt)
+  const result = await generateJSON<Partial<TopicVocabResponse> | null>(prompt, undefined, signal)
   const raw = Array.isArray(result?.vocab) ? result.vocab : []
   const vocab = raw.filter(isGeneratedVocab)
   if (vocab.length < raw.length) {

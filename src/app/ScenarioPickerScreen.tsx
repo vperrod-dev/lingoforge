@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import {
@@ -36,13 +36,21 @@ export function ScenarioPickerScreen() {
   const [customScenario, setCustomScenario] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const abortRef = useRef<AbortController | null>(null)
+
+  // Cancel the in-flight generation when the screen unmounts — the call can
+  // take 20-40s, and setState on an unmounted screen is a silent leak.
+  useEffect(() => () => abortRef.current?.abort(), [])
 
   const startLesson = async (scenario: string) => {
     if (!scenario.trim()) return
+    const ac = new AbortController()
+    abortRef.current = ac
     setStatus('checking')
     setErrorMsg('')
 
     const online = await isOllamaOnline()
+    if (ac.signal.aborted) return
     if (!online) {
       setStatus('offline')
       return
@@ -50,7 +58,8 @@ export function ScenarioPickerScreen() {
 
     setStatus('generating')
     try {
-      const data = await generateScenario(scenario.trim(), course.ttsLang)
+      const data = await generateScenario(scenario.trim(), course.ttsLang, undefined, ac.signal)
+      if (ac.signal.aborted) return
       if (data.dialogue.length === 0 && data.vocab.length === 0) {
         throw new Error('No scenario content generated')
       }
@@ -60,6 +69,7 @@ export function ScenarioPickerScreen() {
       )
       navigate('/scenario-lesson/play')
     } catch (e) {
+      if (ac.signal.aborted) return
       setErrorMsg(e instanceof Error ? e.message : 'Generation failed')
       setStatus('error')
     }

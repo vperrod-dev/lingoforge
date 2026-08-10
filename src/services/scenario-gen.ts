@@ -67,6 +67,7 @@ export async function generateScenario(
   situation: string,
   ttsLang: string,
   level: string = 'A2',
+  signal?: AbortSignal,
 ): Promise<ScenarioData> {
   const lang = langName(ttsLang)
   const prompt = `You are a ${lang} language tutor. Create a complete lesson for the situation: "${situation}" at ${level} level.
@@ -86,7 +87,7 @@ Rules:
 - Phrases should be practical and immediately usable
 - Include polite/formal variants where relevant`
 
-  const result = await generateJSON<Partial<ScenarioData> | null>(prompt)
+  const result = await generateJSON<Partial<ScenarioData> | null>(prompt, undefined, signal)
   const vocab = filterValid(result?.vocab, isScenarioVocab, 'vocab')
   const phrases = filterValid(result?.phrases, isScenarioPhrase, 'phrases')
   const dialogue = filterValid(result?.dialogue, isDialogueLine, 'dialogue')
