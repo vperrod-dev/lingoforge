@@ -27,6 +27,15 @@ npm run gen-audio    # pre-generate MP3s (python scripts/gen-audio.py)
 - **`src/app/`** — screens (Path, Lesson, Alphabet drills, Reading, Phrasebook,
   Practice, Stats); routes wired in `App.tsx`.
 - **`src/ui/GlossText.tsx`** — shared tap-to-translate text (reading/dialogue/phrasebook).
+- **`src/ui/ScriptKeypad.tsx`** — on-screen Cyrillic / Spanish-accent keys under every
+  typed answer. A phone has no Russian keyboard until one is installed, so without
+  this every typed Russian answer is a dead end. Typed exercises also carry a Hint
+  button that reveals the answer one letter at a time.
+- Speaking degrades instead of blocking: `SpeakExercise` shows the phrase and its
+  transliteration (never audio-only — phones block autoplay), names the cause of
+  every mic failure (`speechErrorMessage` in `src/audio/stt.ts`), and always offers
+  a skip, which reaches `LessonPlayer` as `onAnswer(_, _, { skipped: true })` and
+  advances without scoring or re-queueing.
 - Audio = Web Speech API TTS only (deliberately no external audio API — keeps it
   local-first); pre-generated MP3s via `npm run gen-audio`.
 

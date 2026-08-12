@@ -16,13 +16,23 @@ function audioUrl(text: string, lang: string): string {
   return `${import.meta.env.BASE_URL}audio/${prefix}/${safeText(text)}.mp3`
 }
 
+let currentAudio: HTMLAudioElement | null = null
+
 async function playAudioFile(url: string): Promise<boolean> {
   return new Promise((resolve) => {
     const el = new Audio(url)
+    currentAudio = el
     el.onended = () => resolve(true)
     el.onerror = () => resolve(false)
     el.play().catch(() => resolve(false))
   })
+}
+
+/** Cut playback short — the mic must not record the app talking to itself. */
+export function stopSpeaking(): void {
+  currentAudio?.pause()
+  currentAudio = null
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel()
 }
 
 // ── Web Speech API fallback ────────────────────────────────────────────────

@@ -22,7 +22,7 @@ interface Props {
   ttsLang: string
   renderExercise: (
     exercise: ExerciseInstance,
-    onAnswer: (correct: boolean, correctAnswer: string) => void,
+    onAnswer: (correct: boolean, correctAnswer: string, opts?: { skipped?: boolean }) => void,
   ) => React.ReactNode
   onComplete: (result: LessonResult) => void
   onExit: () => void
@@ -48,8 +48,14 @@ export function LessonPlayer({ exercises, renderExercise, onComplete, onExit }: 
   const progress = Math.min(1, index / queue.length)
   const current = queue[index]
 
-  const handleAnswer = (correct: boolean, correctAnswer: string) => {
+  const handleAnswer = (correct: boolean, correctAnswer: string, opts?: { skipped?: boolean }) => {
     timer.current = recordActivity(timer.current)
+    // A skip (mic unavailable, can't speak here) moves on without scoring the
+    // word wrong and without sending the exercise back around.
+    if (opts?.skipped) {
+      next()
+      return
+    }
     const isRetry = retried.current.has(current)
     if ('vocabIds' in current) {
       for (const id of current.vocabIds) {

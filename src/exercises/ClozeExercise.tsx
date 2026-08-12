@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Lightbulb } from 'lucide-react'
 import { ClayButton } from '../ui/ClayButton'
+import { ScriptKeypad } from '../ui/ScriptKeypad'
 import { isCorrectAnswer } from '../engine/answer-check'
 
 interface Props {
@@ -7,17 +9,25 @@ interface Props {
   blankIndex: number
   translation: string
   answer: string
+  ttsLang: string
   onAnswer: (correct: boolean, correctAnswer: string) => void
 }
 
-export function ClozeExercise({ tokens, blankIndex, translation, answer, onAnswer }: Props) {
+export function ClozeExercise({ tokens, blankIndex, translation, answer, ttsLang, onAnswer }: Props) {
   const [text, setText] = useState('')
+  const [revealed, setRevealed] = useState(0)
   const [submitted, setSubmitted] = useState(false)
 
   const submit = () => {
     if (submitted || !text.trim()) return
     setSubmitted(true)
     onAnswer(isCorrectAnswer(answer, text), answer)
+  }
+
+  const hint = () => {
+    const next = revealed + 1
+    setRevealed(next)
+    setText(answer.slice(0, next))
   }
 
   return (
@@ -45,9 +55,31 @@ export function ClozeExercise({ tokens, blankIndex, translation, answer, onAnswe
           ),
         )}
       </p>
-      <ClayButton variant="primary" disabled={!text.trim() || submitted} onClick={submit}>
-        Check
-      </ClayButton>
+      <ScriptKeypad
+        lang={ttsLang}
+        disabled={submitted}
+        onInsert={(char) => setText((t) => t + char)}
+        onBackspace={() => setText((t) => t.slice(0, -1))}
+      />
+      <div className="flex items-center gap-3">
+        <ClayButton
+          variant="neutral"
+          disabled={submitted || revealed >= answer.length}
+          onClick={hint}
+        >
+          <span className="flex items-center gap-2">
+            <Lightbulb className="size-5" aria-hidden /> Hint
+          </span>
+        </ClayButton>
+        <ClayButton
+          variant="primary"
+          className="grow"
+          disabled={!text.trim() || submitted}
+          onClick={submit}
+        >
+          Check
+        </ClayButton>
+      </div>
     </div>
   )
 }

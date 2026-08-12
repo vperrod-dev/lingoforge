@@ -33,6 +33,9 @@ function play(count: number) {
           <button type="button" onClick={() => onAnswer(false, 'sí')}>
             wrong
           </button>
+          <button type="button" onClick={() => onAnswer(false, 'sí', { skipped: true })}>
+            skip
+          </button>
         </>
       )}
       onComplete={onComplete}
@@ -43,7 +46,9 @@ function play(count: number) {
     fireEvent.click(screen.getByText(correct ? 'right' : 'wrong'))
     fireEvent.click(screen.getByText('Continue'))
   }
-  return { onComplete, answer }
+  // A skip advances on its own — no feedback footer to dismiss.
+  const skip = () => fireEvent.click(screen.getByText('skip'))
+  return { onComplete, answer, skip }
 }
 
 test('a lesson answered correctly reports every answer as first-try correct', () => {
@@ -120,4 +125,18 @@ test('the exit button leaves the lesson', () => {
   )
   fireEvent.click(screen.getByLabelText('Exit lesson'))
   expect(onExit).toHaveBeenCalled()
+})
+
+test('a skipped exercise moves on without being marked wrong', () => {
+  const { onComplete, answer, skip } = play(2)
+  skip()
+  answer(true)
+  expect(onComplete.mock.calls[0][0].vocabOutcomes).toEqual({ v1: true })
+})
+
+test('a skipped exercise does not come back around', () => {
+  const { onComplete, answer, skip } = play(2)
+  skip()
+  answer(true)
+  expect(onComplete).toHaveBeenCalledTimes(1)
 })

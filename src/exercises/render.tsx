@@ -17,7 +17,7 @@ import { SpellExercise } from './SpellExercise'
 export function renderExercise(
   exercise: ExerciseInstance,
   ttsLang: string,
-  onAnswer: (correct: boolean, correctAnswer: string) => void,
+  onAnswer: (correct: boolean, correctAnswer: string, opts?: { skipped?: boolean }) => void,
 ) {
   switch (exercise.kind) {
     case 'choice':
@@ -59,6 +59,7 @@ export function renderExercise(
           prompt={exercise.prompt}
           accept={exercise.accept}
           answer={exercise.answer}
+          ttsLang={ttsLang}
           onAnswer={onAnswer}
         />
       )
@@ -71,6 +72,7 @@ export function renderExercise(
           blankIndex={exercise.blankIndex}
           translation={exercise.translation}
           answer={exercise.answer}
+          ttsLang={ttsLang}
           onAnswer={onAnswer}
         />
       )
@@ -90,6 +92,7 @@ export function renderExercise(
           prompt={exercise.prompt}
           accept={exercise.accept}
           answer={exercise.answer}
+          ttsLang={ttsLang}
           onAnswer={onAnswer}
         />
       )
@@ -97,6 +100,7 @@ export function renderExercise(
       return (
         <SpeakExercise
           ttsText={exercise.ttsText}
+          hint={exercise.hint}
           ttsLang={ttsLang}
           accept={exercise.accept}
           answer={exercise.answer}

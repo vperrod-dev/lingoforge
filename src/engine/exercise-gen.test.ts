@@ -130,3 +130,21 @@ describe('generateLessonExercises balance', () => {
     expect(kinds.size).toBeGreaterThanOrEqual(6)
   })
 })
+
+describe('difficulty ramp', () => {
+  it('never asks a first-time learner to free-type a whole sentence', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    for (let i = 0; i < 30; i++) {
+      expect(generateLessonExercises(ru, lesson, 0).some((e) => e.kind === 'translate')).toBe(false)
+    }
+  })
+
+  it('brings full-sentence typing back on the second pass', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    const kinds = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      for (const e of generateLessonExercises(ru, lesson, 1)) kinds.add(e.kind)
+    }
+    expect(kinds.has('translate')).toBe(true)
+  })
+})

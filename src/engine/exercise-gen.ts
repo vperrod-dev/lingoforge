@@ -89,6 +89,8 @@ export type ExerciseInstance =
   | {
       kind: 'speak'
       ttsText: string
+      /** Transliteration, so a learner who can't read the script yet can still say it */
+      hint?: string
       accept: string[]
       answer: string
       vocabIds: string[]
@@ -299,6 +301,7 @@ function speakExercise(vocab: VocabItem): ExerciseInstance {
   return {
     kind: 'speak',
     ttsText: vocab.lemma,
+    ...(vocab.hint ? { hint: vocab.hint } : {}),
     accept: [vocab.lemma, ...(vocab.forms ?? [])],
     answer: vocab.lemma,
     vocabIds: [vocab.id],
@@ -448,9 +451,13 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
   for (const s of sample(lesson.sentences, Math.min(2, lesson.sentences.length))) {
     exercises.push(clozeExercise(s))
   }
-  // Free translate: full-sentence production
-  for (const s of sample(lesson.sentences, Math.min(1, lesson.sentences.length))) {
-    exercises.push(translateExercise(s))
+  // Free translate: full-sentence production. Typing a whole sentence in an
+  // unfamiliar script on first contact is punishing, so the first pass through a
+  // lesson builds sentences from the word bank instead.
+  if (crownLevel >= 1) {
+    for (const s of sample(lesson.sentences, Math.min(1, lesson.sentences.length))) {
+      exercises.push(translateExercise(s))
+    }
   }
   // Speak-back: pronunciation practice, only where the browser supports speech recognition
   if (isSpeechSupported()) {
