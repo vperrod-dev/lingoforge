@@ -11,10 +11,26 @@ Fun, Duolingo-style web app for learning **Russian** and **Spanish** from Englis
 
 ## Features
 
-- 7 exercise types: multiple choice, word bank, listening (browser TTS), typing with tolerant checking (ё/е, Spanish accents), matching pairs, Cyrillic drills, pattern substitution
+- 15 exercise types: multiple choice, word bank, listening, spell-from-tiles, typing with tolerant checking (ё/е, Spanish accents), dictation, free translation, fill-in-the-blank, matching pairs, error correction, sentence reordering, pattern substitution, dialogue, phrase ordering, speak-back
 - Multiple local profiles (Netflix-style picker), each with its own courses and progress
 - Stats: weekly minutes chart, 4-week streak heatmap, badges, JSON backup
 - Installable PWA, mobile-first, claymorphism design, reduced-motion support
+
+### On a phone
+
+The two things that make a phone harder than a laptop are handled explicitly:
+
+- **Typing a script you don't have a keyboard for.** Every typed answer carries an
+  on-screen keypad — Cyrillic for Russian, the accented letters for Spanish — so
+  you never need to install a system keyboard. It collapses if you already have
+  one. A **Hint** button reveals the answer a letter at a time, and the first pass
+  through a lesson builds sentences from the word bank rather than asking you to
+  free-type one.
+- **Speaking.** Speech recognition is patchy on mobile: a browser may not have it,
+  permission may be denied, the service may be unreachable. The word to say is
+  always shown with its transliteration (never audio-only — phones block autoplay),
+  every failure says what went wrong, and "Can't speak now — skip" moves you on
+  without scoring the word wrong.
 
 ## Run
 
@@ -25,7 +41,10 @@ npm test         # engine + content integrity tests
 npm run build    # production build (dist/)
 ```
 
-Audio uses the Web Speech API — Edge/Chrome on desktop include ru-RU and es-ES voices.
+Audio plays pre-generated MP3s and falls back to the Web Speech API when a phrase
+has no file (Edge/Chrome on desktop include ru-RU and es-ES voices). No audio is
+committed — `scripts/deploy.sh` runs `npm run gen-audio` to synthesize
+`public/audio/` on every deploy, so a local `npm run dev` uses the browser voices.
 
 ## Optional: AI lessons (Ollama)
 

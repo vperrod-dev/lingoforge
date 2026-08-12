@@ -32,11 +32,22 @@ Russian is brutal for a beginner (no Cyrillic keyboard on a phone).
 
 ## Review
 
-Shipped 2026-08-12, live at https://lingoforge.pages.dev.
+Shipped 2026-08-12 (`26b0040`, `a7d1f08`), live at https://lingoforge.pages.dev.
 
-- Speaking: prompt text now always visible, mic failures name the cause and offer
-  Try again / Skip, recognizer aborted on unmount, TTS silenced before listening.
-- Writing: Cyrillic keypad + hint on typing/dictation/cloze; keypad is collapsible
-  for learners who do have a Russian keyboard installed.
+- Speaking: the phrase and its transliteration (the `hint` field the ru course
+  already carried, unused until now) are always on screen, mic failures name the
+  cause, the recognizer is aborted on unmount and after a 12s stall, TTS is
+  silenced before listening, and a skip advances without scoring.
+- Writing: Cyrillic keypad + letter-by-letter hint on typing/dictation/cloze; the
+  keypad collapses for learners who do have a Russian keyboard installed. Rows are
+  capped at 11 keys — the first cut overflowed a 390px viewport and clipped ф/я.
 - Ramp: crown 0 lessons no longer ask for a free-typed full sentence.
-- 100 tests pass (14 new), lint clean, Playwright smoke on a 390×844 viewport.
+- 359 tests pass (17 new), lint + tsc clean, Playwright pass on iPhone-13 and
+  Pixel-7 viewports **against the deployed site**, new strings confirmed in the
+  live bundle.
+- Docs updated same turn: README (features, phone section, audio pipeline),
+  CLAUDE.md (ScriptKeypad + speaking-degradation architecture), `os/backlog.md`.
+
+Open call for Victor: a skipped speaking exercise costs no XP and does not mark the
+word wrong. If skips should count as a miss for SRS, it's a one-line change in
+`LessonPlayer.handleAnswer`.
