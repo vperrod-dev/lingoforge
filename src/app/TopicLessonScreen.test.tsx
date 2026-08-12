@@ -85,4 +85,10 @@ describe('TopicLessonScreen', () => {
       expect(srsItems[`topic:${v.word}`]).toBeTruthy()
     }
   })
+
+  it('shows the no-data fallback instead of crashing on a malformed payload', () => {
+    sessionStorage.setItem('topicLesson', JSON.stringify({ topic: 'Food' }))
+    renderScreen()
+    expect(screen.getByText('No topic lesson data found.')).toBeTruthy()
+  })
 })

@@ -16,6 +16,26 @@ interface TopicLessonData {
   ttsLang: string
 }
 
+function isTopicLessonData(v: unknown): v is TopicLessonData {
+  if (typeof v !== 'object' || v === null) return false
+  const d = v as Record<string, unknown>
+  return (
+    typeof d.topic === 'string' &&
+    typeof d.ttsLang === 'string' &&
+    Array.isArray(d.vocab) &&
+    d.vocab.every(
+      (w) =>
+        typeof w === 'object' &&
+        w !== null &&
+        typeof (w as Record<string, unknown>).word === 'string' &&
+        typeof (w as Record<string, unknown>).translation === 'string' &&
+        typeof (w as Record<string, unknown>).pronunciation === 'string' &&
+        typeof (w as Record<string, unknown>).example === 'string' &&
+        typeof (w as Record<string, unknown>).exampleTranslation === 'string',
+    )
+  )
+}
+
 export function TopicLessonScreen() {
   const navigate = useNavigate()
   const { addXp, addStudyMinutes, reviewVocab } = useProgress()
@@ -25,7 +45,12 @@ export function TopicLessonScreen() {
   const lessonData: TopicLessonData | null = useMemo(() => {
     const raw = sessionStorage.getItem('topicLesson')
     if (!raw) return null
-    try { return JSON.parse(raw) } catch { return null }
+    try {
+      const parsed: unknown = JSON.parse(raw)
+      return isTopicLessonData(parsed) ? parsed : null
+    } catch {
+      return null
+    }
   }, [])
 
   const exercises = useMemo(
