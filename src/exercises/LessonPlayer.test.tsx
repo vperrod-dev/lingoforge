@@ -140,3 +140,9 @@ test('a skipped exercise does not come back around', () => {
   answer(true)
   expect(onComplete).toHaveBeenCalledTimes(1)
 })
+
+test('skipping the final exercise still finishes the lesson', () => {
+  const { onComplete, skip } = play(1)
+  skip()
+  expect(onComplete).toHaveBeenCalledTimes(1)
+})
