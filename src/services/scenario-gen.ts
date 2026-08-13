@@ -27,7 +27,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null
 }
 
-function isScenarioVocab(v: unknown): v is ScenarioData['vocab'][number] {
+export function isScenarioVocab(v: unknown): v is ScenarioData['vocab'][number] {
   return (
     isRecord(v) &&
     typeof v.word === 'string' &&
@@ -36,7 +36,7 @@ function isScenarioVocab(v: unknown): v is ScenarioData['vocab'][number] {
   )
 }
 
-function isScenarioPhrase(v: unknown): v is ScenarioPhrase {
+export function isScenarioPhrase(v: unknown): v is ScenarioPhrase {
   return (
     isRecord(v) &&
     typeof v.phrase === 'string' &&
@@ -45,7 +45,7 @@ function isScenarioPhrase(v: unknown): v is ScenarioPhrase {
   )
 }
 
-function isDialogueLine(v: unknown): v is DialogueLine {
+export function isDialogueLine(v: unknown): v is DialogueLine {
   return (
     isRecord(v) &&
     (v.speaker === 'you' || v.speaker === 'other') &&

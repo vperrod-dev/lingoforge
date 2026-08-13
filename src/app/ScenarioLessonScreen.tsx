@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
 import { Zap, Target, Timer, Lightbulb } from 'lucide-react'
-import { scenarioToExercises, type ScenarioData } from '../services/scenario-gen'
+import {
+  scenarioToExercises,
+  isScenarioVocab,
+  isScenarioPhrase,
+  isDialogueLine,
+  type ScenarioData,
+} from '../services/scenario-gen'
 import { LessonPlayer, type LessonResult } from '../exercises/LessonPlayer'
 import { renderExercise } from '../exercises/render'
 import { useProgress } from '../state/progress'
@@ -16,6 +22,25 @@ interface StoredScenario {
   ttsLang: string
 }
 
+function isStoredScenario(v: unknown): v is StoredScenario {
+  if (typeof v !== 'object' || v === null) return false
+  const s = v as Record<string, unknown>
+  if (typeof s.data !== 'object' || s.data === null) return false
+  const d = s.data as Record<string, unknown>
+  return (
+    typeof s.scenario === 'string' &&
+    typeof s.ttsLang === 'string' &&
+    typeof d.title === 'string' &&
+    typeof d.culturalTip === 'string' &&
+    Array.isArray(d.vocab) &&
+    d.vocab.every(isScenarioVocab) &&
+    Array.isArray(d.phrases) &&
+    d.phrases.every(isScenarioPhrase) &&
+    Array.isArray(d.dialogue) &&
+    d.dialogue.every(isDialogueLine)
+  )
+}
+
 export function ScenarioLessonScreen() {
   const navigate = useNavigate()
   const { addXp, addStudyMinutes, reviewVocab } = useProgress()
@@ -25,7 +50,12 @@ export function ScenarioLessonScreen() {
   const stored: StoredScenario | null = useMemo(() => {
     const raw = sessionStorage.getItem('scenarioLesson')
     if (!raw) return null
-    try { return JSON.parse(raw) } catch { return null }
+    try {
+      const parsed: unknown = JSON.parse(raw)
+      return isStoredScenario(parsed) ? parsed : null
+    } catch {
+      return null
+    }
   }, [])
 
   const exercises = useMemo(
