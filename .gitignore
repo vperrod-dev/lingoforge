@@ -32,3 +32,6 @@ public/audio/
 
 # package-lock.json is the source of truth (scripts/deploy.sh runs npm ci)
 pnpm-lock.yaml
+
+# Python bytecode from scripts/
+__pycache__/
