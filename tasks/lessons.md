@@ -25,3 +25,19 @@ Rules:
   feature, not a degraded one. Make failure visible in the UI and assert it.
 - Content pipelines fail by omission: when adding a content kind, check the
   generator's extractor list covers it — nothing errors when audio is missing.
+
+## 2026-08-14 (same day, round 3) — one bypass undoes a whole pipeline
+Round 2 fixed the MP3 pipeline and the report came back unchanged. Two reasons:
+`FlashcardsScreen` had its own private `speak()` on the Web Speech API, so the
+pipeline fix never reached the screen Victor was tapping; and the fix had been
+verified on the exercises that were reported, not on every speaker in the app.
+
+Rules:
+- When fixing a shared mechanism, grep for every call site *and* for private
+  reimplementations of it (`grep -rn "speechSynthesis\|new Audio"`), then funnel
+  them through one component so the next fix can't miss a screen.
+- Enumerate the full input set a feature can receive and check it mechanically
+  (`scripts/check-audio.py`), rather than spot-checking the reported case.
+- "Beginner-friendly" is about what the exercise *asks for*, not what help it
+  offers. A keypad and a hint do not make free-typing a foreign script
+  appropriate for someone on their first lesson.
