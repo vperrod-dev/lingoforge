@@ -6,11 +6,17 @@
  * No manual percent-encoding: that caused double-encoding (file %D0%BF.mp3 ≠ path привет).
  */
 
+/**
+ * Must match safe_filename() in scripts/gen-audio.py. '?' and '#' are dropped
+ * rather than kept: they are legal in a filename but start the query/fragment
+ * in a URL, so '/audio/ru/Где метро?.mp3' fetches '/audio/ru/Где метро' and
+ * gets the SPA shell back instead of the MP3.
+ */
 function safeText(text: string): string {
-  return text.replace(/\//g, '-').replace(/\\/g, '-')
+  return text.replace(/[/\\]/g, '-').replace(/[?#]/g, '')
 }
 
-function audioUrl(text: string, lang: string): string {
+export function audioUrl(text: string, lang: string): string {
   const prefix = lang.split('-')[0]
   // import.meta.env.BASE_URL = '/lingoforge/' on GitHub Pages, './' locally
   return `${import.meta.env.BASE_URL}audio/${prefix}/${safeText(text)}.mp3`
@@ -70,27 +76,31 @@ export async function hasVoice(lang: string): Promise<boolean> {
   return ['ru', 'es'].includes(lang.split('-')[0]) || (await findVoice(lang)) !== null
 }
 
-async function speakWebSpeech(text: string, lang: string, rate: number): Promise<void> {
-  if (!('speechSynthesis' in window)) return
+async function speakWebSpeech(text: string, lang: string, rate: number): Promise<boolean> {
+  if (!('speechSynthesis' in window)) return false
   const synth = window.speechSynthesis
   synth.cancel()
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = lang
   utterance.rate = rate
+  // No voice for the language means the device would read Cyrillic with an
+  // English voice, or stay silent — report that as "nothing was heard".
   const voice = await findVoice(lang)
-  if (voice) utterance.voice = voice
+  if (!voice) return false
+  utterance.voice = voice
   return new Promise((resolve) => {
-    utterance.onend = () => resolve()
-    utterance.onerror = () => resolve()
+    let started = false
+    utterance.onstart = () => { started = true }
+    utterance.onend = () => resolve(started)
+    utterance.onerror = () => resolve(false)
     synth.speak(utterance)
   })
 }
 
-export async function speak(text: string, lang: string, rate = 0.9): Promise<void> {
+/** Resolves false when the device produced no sound — the caller must say so. */
+export async function speak(text: string, lang: string, rate = 0.9): Promise<boolean> {
   const url = audioUrl(text, lang)
   const played = await playAudioFile(url)
   if (import.meta.env.DEV) console.log('[tts]', url, played ? 'mp3 ✓' : 'fallback → Web Speech')
-  if (!played) {
-    await speakWebSpeech(text, lang, rate)
-  }
+  return played || (await speakWebSpeech(text, lang, rate))
 }

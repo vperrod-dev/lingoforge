@@ -126,7 +126,6 @@ describe('generateLessonExercises balance', () => {
     }
     // production + listening variety beyond multiple-choice
     expect(kinds.has('spell')).toBe(true)
-    expect(kinds.has('dictation')).toBe(true)
     expect(kinds.size).toBeGreaterThanOrEqual(6)
   })
 })
@@ -146,5 +145,32 @@ describe('difficulty ramp', () => {
       for (const e of generateLessonExercises(ru, lesson, 1)) kinds.add(e.kind)
     }
     expect(kinds.has('translate')).toBe(true)
+  })
+
+  it('never asks a first-time learner to type a sentence from audio alone', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    for (let i = 0; i < 30; i++) {
+      expect(generateLessonExercises(ru, lesson, 0).some((e) => e.kind === 'dictation')).toBe(false)
+    }
+  })
+
+  it('brings dictation back on the second pass', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    const kinds = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      for (const e of generateLessonExercises(ru, lesson, 1)) kinds.add(e.kind)
+    }
+    expect(kinds.has('dictation')).toBe(true)
+  })
+
+  it('shows a first-time learner every recognition exercise before any typed one', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    for (let i = 0; i < 30; i++) {
+      const kinds = generateLessonExercises(ru, lesson, 0).map((e) => e.kind)
+      const lastChoice = kinds.lastIndexOf('choice')
+      const firstTyped = kinds.findIndex((k) => k === 'typing' || k === 'cloze')
+      if (lastChoice === -1 || firstTyped === -1) continue
+      expect(lastChoice).toBeLessThan(firstTyped)
+    }
   })
 })

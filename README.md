@@ -31,6 +31,14 @@ The two things that make a phone harder than a laptop are handled explicitly:
   always shown with its transliteration (never audio-only — phones block autoplay),
   every failure says what went wrong, and "Can't speak now — skip" moves you on
   without scoring the word wrong.
+- **Hearing.** Every speakable text is a pre-generated neural-voice MP3, including
+  whole lesson sentences; the browser's own voices are only a fallback. If the
+  device still makes no sound — no Russian voice installed, silent switch on —
+  tapping the speaker reveals the text instead of leaving you stuck on an
+  exercise you cannot hear.
+- **Order.** A first pass through a lesson is sequenced, not shuffled: you meet a
+  word, recognise it and build it from pieces before anything asks you to type it,
+  and dictation waits for the second pass.
 
 ## Run
 

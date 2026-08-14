@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Volume2 } from 'lucide-react'
-import { speak } from '../audio/tts'
+import { useState } from 'react'
+import { AudioPrompt } from '../ui/AudioPrompt'
 
 interface Props {
   ttsText: string
@@ -13,10 +12,6 @@ interface Props {
 export function ListeningExercise({ ttsText, ttsLang, options, correctIndex, onAnswer }: Props) {
   const [picked, setPicked] = useState<number | null>(null)
 
-  useEffect(() => {
-    speak(ttsText, ttsLang)
-  }, [ttsText, ttsLang])
-
   const pick = (i: number) => {
     if (picked !== null) return
     setPicked(i)
@@ -26,14 +21,7 @@ export function ListeningExercise({ ttsText, ttsLang, options, correctIndex, onA
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-lg font-bold text-fg-muted">What do you hear?</h2>
-      <button
-        type="button"
-        aria-label="Replay audio"
-        className="clay clay-press mx-auto flex size-24 items-center justify-center bg-primary text-on-primary"
-        onClick={() => speak(ttsText, ttsLang)}
-      >
-        <Volume2 className="size-10" aria-hidden />
-      </button>
+      <AudioPrompt text={ttsText} lang={ttsLang} />
       <div className="grid gap-3 sm:grid-cols-2">
         {options.map((option, i) => {
           let state = ''

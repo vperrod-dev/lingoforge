@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Volume2, Lightbulb } from 'lucide-react'
-import { speak } from '../audio/tts'
+import { useState } from 'react'
+import { Lightbulb } from 'lucide-react'
+import { AudioPrompt } from '../ui/AudioPrompt'
 import { ClayButton } from '../ui/ClayButton'
 import { ScriptKeypad } from '../ui/ScriptKeypad'
 import { matchesAny } from '../engine/answer-check'
@@ -18,10 +18,6 @@ export function DictationExercise({ ttsText, ttsLang, accept, answer, onAnswer }
   const [revealed, setRevealed] = useState(0)
   const [submitted, setSubmitted] = useState(false)
 
-  useEffect(() => {
-    speak(ttsText, ttsLang)
-  }, [ttsText, ttsLang])
-
   const submit = () => {
     if (submitted || !text.trim()) return
     setSubmitted(true)
@@ -37,14 +33,7 @@ export function DictationExercise({ ttsText, ttsLang, accept, answer, onAnswer }
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-lg font-bold text-fg-muted">Type what you hear</h2>
-      <button
-        type="button"
-        aria-label="Replay audio"
-        className="clay clay-press mx-auto flex size-24 items-center justify-center bg-primary text-on-primary"
-        onClick={() => speak(ttsText, ttsLang)}
-      >
-        <Volume2 className="size-10" aria-hidden />
-      </button>
+      <AudioPrompt text={ttsText} lang={ttsLang} />
       <label className="flex flex-col gap-2">
         <span className="sr-only">What you heard</span>
         <input

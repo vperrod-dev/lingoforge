@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Volume2 } from 'lucide-react'
-import { speak } from '../audio/tts'
+import { useState } from 'react'
+import { AudioPrompt } from '../ui/AudioPrompt'
 import { ClayButton } from '../ui/ClayButton'
 import { isCorrectAnswer } from '../engine/answer-check'
 import { shuffle } from '../engine/seeded-random'
@@ -27,10 +26,6 @@ export function ReorderDictationExercise({ sentence, ttsLang, answerChips, distr
   const [placed, setPlaced] = useState<Chip[]>([])
   const [submitted, setSubmitted] = useState(false)
 
-  useEffect(() => {
-    speak(sentence, ttsLang)
-  }, [sentence, ttsLang])
-
   const toggle = (chip: Chip, isPlaced: boolean) => {
     if (submitted) return
     setPlaced((p) => {
@@ -49,14 +44,7 @@ export function ReorderDictationExercise({ sentence, ttsLang, answerChips, distr
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-lg font-bold text-fg-muted">Listen, then build the sentence</h2>
-      <button
-        type="button"
-        aria-label="Replay audio"
-        className="clay clay-press mx-auto flex size-24 items-center justify-center bg-primary text-on-primary"
-        onClick={() => speak(sentence, ttsLang)}
-      >
-        <Volume2 className="size-10" aria-hidden />
-      </button>
+      <AudioPrompt text={sentence} lang={ttsLang} />
 
       <div className="clay min-h-16 bg-bg/60 p-3" aria-label="Your answer">
         <div className="flex flex-wrap gap-2">

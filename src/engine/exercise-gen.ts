@@ -393,10 +393,35 @@ export function reorderDictationExercise(
 }
 
 /**
+ * Teaching order for a first pass: meet the word, then recognise it, then build
+ * it from pieces, and only then produce it from nothing. Shuffling everything
+ * meant a beginner's very first exercise could be "type this in Cyrillic" for a
+ * word the lesson had not shown yet.
+ */
+const TEACHING_ORDER: ExerciseInstance['kind'][] = [
+  'choice',
+  'listening',
+  'matching',
+  'pattern',
+  'spell',
+  'wordBank',
+  'phraseOrder',
+  'dialogue',
+  'cloze',
+  'errorCorrection',
+  'reorderDictation',
+  'speak',
+  'dictation',
+  'typing',
+  'translate',
+]
+
+/**
  * Trim to `total` while keeping the activity mix varied: no single kind may exceed its
  * cap, so "select the word" (choice/listening) can't dominate the way it used to.
+ * `ordered` sorts what survives into TEACHING_ORDER instead of leaving it shuffled.
  */
-function capByKind(exercises: ExerciseInstance[], total: number): ExerciseInstance[] {
+function capByKind(exercises: ExerciseInstance[], total: number, ordered = false): ExerciseInstance[] {
   const caps: Partial<Record<ExerciseInstance['kind'], number>> = {
     choice: 4, // recognition intros — capped so they don't flood the lesson
     listening: 2, // the only "pick what you hear" select; rest of listening is spell/dictation
@@ -411,7 +436,11 @@ function capByKind(exercises: ExerciseInstance[], total: number): ExerciseInstan
     counts.set(ex.kind, n + 1)
     kept.push(ex)
   }
-  return shuffle(kept).slice(0, total)
+  const chosen = shuffle(kept).slice(0, total)
+  if (!ordered) return chosen
+  return [...chosen].sort(
+    (a, b) => TEACHING_ORDER.indexOf(a.kind) - TEACHING_ORDER.indexOf(b.kind),
+  )
 }
 
 export function generateLessonExercises(course: Course, lesson: Lesson, crownLevel: number): ExerciseInstance[] {
@@ -440,8 +469,12 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
   for (const v of sample(spellable, Math.min(2, spellable.length))) {
     exercises.push(spellExercise(v, pool, true))
   }
-  for (const s of sample(lesson.sentences, Math.min(2, lesson.sentences.length))) {
-    exercises.push(dictationExercise(s))
+  // Dictation is typing a whole sentence in a new script from sound alone — the
+  // hardest thing in the lesson, so it waits until the second pass.
+  if (crownLevel >= 1) {
+    for (const s of sample(lesson.sentences, Math.min(2, lesson.sentences.length))) {
+      exercises.push(dictationExercise(s))
+    }
   }
   // Sentences as word banks
   for (const s of sample(lesson.sentences, Math.min(2, lesson.sentences.length))) {
@@ -507,5 +540,5 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
     })
   }
 
-  return capByKind(exercises, 14)
+  return capByKind(exercises, 14, crownLevel === 0)
 }

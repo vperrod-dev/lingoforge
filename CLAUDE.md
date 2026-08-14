@@ -36,8 +36,20 @@ npm run gen-audio    # pre-generate MP3s (python scripts/gen-audio.py)
   every mic failure (`speechErrorMessage` in `src/audio/stt.ts`), and always offers
   a skip, which reaches `LessonPlayer` as `onAnswer(_, _, { skipped: true })` and
   advances without scoring or re-queueing.
-- Audio = Web Speech API TTS only (deliberately no external audio API — keeps it
-  local-first); pre-generated MP3s via `npm run gen-audio`.
+- Audio = pre-generated MP3s (`npm run gen-audio`, run by `scripts/deploy.sh`)
+  with the Web Speech API as fallback — deliberately no external audio API.
+  `safeText()` in `src/audio/tts.ts` must stay identical to `safe_filename()` in
+  `scripts/gen-audio.py`: `?` and `#` are legal in a filename but start the
+  query/fragment in a URL, so a file named `Где метро?.mp3` can never be
+  fetched. Every text the app can speak — vocab, forms, **lesson sentences**,
+  alphabet, phrasebook, readings — needs an entry in `gen-audio.py`, or that
+  exercise is silent on any phone without a Russian/Spanish voice installed.
+- `src/ui/AudioPrompt.tsx` — the replay button for listen-first exercises. `speak()`
+  resolves false when the device made no sound; the prompt then reveals the text,
+  so a silent phone can't turn a listening exercise into a dead end.
+- First pass through a lesson (`crownLevel === 0`) is ordered, not shuffled:
+  `TEACHING_ORDER` in `exercise-gen.ts` puts recognition before production, and
+  dictation/free translation only appear from the second pass.
 
 ## Conventions
 

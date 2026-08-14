@@ -100,8 +100,9 @@ export function LessonPlayer({ exercises, renderExercise, onComplete, onExit }: 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 p-4 pb-36">
       <header className="flex items-center gap-4">
-        <button type="button" aria-label="Exit lesson" onClick={onExit} className="clay clay-press flex size-11 shrink-0 items-center justify-center text-fg-muted">
-          <X aria-hidden />
+        {/* Labelled, not a bare ✕: reported as "the only way out is to close the app" */}
+        <button type="button" aria-label="Exit lesson" onClick={onExit} className="clay clay-press flex min-h-11 shrink-0 items-center gap-1 px-3 font-bold text-fg-muted">
+          <X className="size-5" aria-hidden /> Exit
         </button>
         <div className="h-5 grow overflow-hidden rounded-full border-2 border-border-soft bg-surface" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
           <motion.div

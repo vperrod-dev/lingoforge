@@ -3,12 +3,15 @@ Generate MP3 audio files for all LingoForge content using edge-tts neural voices
 Run from the project root: python scripts/gen-audio.py
 
 Files saved to public/audio/{lang}/{safe_text}.mp3
-  safe_text = text with '/' replaced by '-' (only char unsafe in filenames)
+  safe_text = text with '/' and '\\' replaced by '-' and '?'/'#' dropped
+              (they are legal in filenames but unfetchable in a URL)
 tts.ts uses the same safeText() transformation, no percent-encoding.
 When the browser fetches the URL, it auto-encodes Unicode → server decodes → matches file.
 
 Coverage:
   - course vocab lemmas + inflected forms (from courses/*.ts)
+  - course lesson sentences (from courses/*.ts) — dictation, reorder-dictation,
+    word bank and cloze all speak whole sentences
   - Russian alphabet letters + example words (from ru-alphabet.ts)
   - phrasebook phrases (from phrasebook.ts) — the 🔊 button on each phrase
   - reading glossary words (from readings.ts) — inline tap-to-hear fallback for
@@ -35,8 +38,19 @@ OUT_DIR = Path("public/audio")
 
 
 def safe_filename(text: str) -> str:
-    """Make text safe for use as a filename. Only replace chars invalid in paths."""
-    return text.replace("/", "-").replace("\\", "-")
+    """Make text safe for use in a path *and* in a URL.
+
+    '?' and '#' are legal in a filename but start the query/fragment in a URL, so
+    a file named 'Где метро?.mp3' can never be fetched — the browser asks for
+    'Где метро' and gets the SPA's index.html back. Dropping them keeps the URL
+    whole; the synthesized speech is unaffected (edge-tts reads the real text).
+    """
+    return (
+        text.replace("/", "-")
+        .replace("\\", "-")
+        .replace("?", "")
+        .replace("#", "")
+    )
 
 
 # ---- course vocab / alphabet extractors (existing) ----
@@ -130,17 +144,19 @@ async def main() -> None:
     ru_texts = list(dict.fromkeys(
         extract_lemmas("src/content/courses/ru.ts")
         + extract_forms("src/content/courses/ru.ts")
+        + extract_phrases(Path("src/content/courses/ru.ts").read_text(encoding="utf-8"))
         + extract_alphabet("src/content/courses/ru-alphabet.ts")[0]
         + extract_alphabet("src/content/courses/ru-alphabet.ts")[1]
     ))
-    print(f"Russian (vocab + alphabet): {len(ru_texts)} unique texts")
+    print(f"Russian (vocab + sentences + alphabet): {len(ru_texts)} unique texts")
     await generate_batch(ru_texts, "ru")
 
     es_texts = list(dict.fromkeys(
         extract_lemmas("src/content/courses/es.ts")
         + extract_forms("src/content/courses/es.ts")
+        + extract_phrases(Path("src/content/courses/es.ts").read_text(encoding="utf-8"))
     ))
-    print(f"\nSpanish (vocab): {len(es_texts)} unique texts")
+    print(f"\nSpanish (vocab + sentences): {len(es_texts)} unique texts")
     await generate_batch(es_texts, "es")
 
     # Phrasebook phrases (per-language)
