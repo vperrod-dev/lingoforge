@@ -70,6 +70,8 @@ export type ExerciseInstance =
       blankIndex: number
       translation: string
       answer: string
+      /** Present until the learner is typing: pick the word instead of spelling it. */
+      options?: string[]
       vocabIds: string[]
     }
   | {
@@ -215,18 +217,27 @@ function wordBankExercise(course: Course, sentence: { text: string; translation:
   }
 }
 
-function clozeExercise(sentence: { text: string; translation: string; vocabIds: string[] }): ExerciseInstance {
+function clozeExercise(
+  course: Course,
+  sentence: { text: string; translation: string; vocabIds: string[] },
+  typed: boolean,
+): ExerciseInstance {
   const tokens = sentence.text.split(/\s+/)
   const candidates = tokens
     .map((t, i) => ({ t, i }))
     .filter(({ t }) => t.replace(/[¿¡?!.,;:'"«»—–-]/g, '').length >= 3)
   const pick = candidates.length > 0 ? sample(candidates, 1)[0] : { t: tokens[0], i: 0 }
+  const distractors = sample(
+    course.vocab.filter((v) => !v.lemma.includes(' ') && v.lemma.toLowerCase() !== pick.t.toLowerCase()),
+    3,
+  ).map((v) => v.lemma)
   return {
     kind: 'cloze',
     tokens,
     blankIndex: pick.i,
     translation: sentence.translation,
     answer: pick.t,
+    ...(typed ? {} : { options: shuffle([pick.t, ...distractors]) }),
     vocabIds: sentence.vocabIds,
   }
 }
@@ -292,9 +303,13 @@ function spellExercise(vocab: VocabItem, pool: string[], audio = false): Exercis
   })
 }
 
-/** Single-token words short enough to assemble from tiles without becoming tedious. */
-function isSpellable(vocab: VocabItem): boolean {
-  return !vocab.lemma.includes(' ') && vocab.lemma.length <= 9
+/**
+ * Single-token words short enough to assemble from tiles without becoming tedious.
+ * Before the learner is typing, tiles are the only production tool there is, so the
+ * length cap is relaxed rather than falling through to a keyboard.
+ */
+function isSpellable(vocab: VocabItem, maxLength = 9): boolean {
+  return !vocab.lemma.includes(' ') && vocab.lemma.length <= maxLength
 }
 
 function speakExercise(vocab: VocabItem): ExerciseInstance {
@@ -449,18 +464,25 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
     .filter((v): v is VocabItem => Boolean(v))
 
   const pool = letterPool(course)
-  const spellable = vocab.filter(isSpellable)
+  const spellable = vocab.filter((v) => isSpellable(v))
   const exercises: ExerciseInstance[] = []
+
+  // A beginner has no business free-typing a foreign script: until the third pass
+  // through a lesson, production means assembling letter tiles and word chips.
+  // Typing arrives only once the words are already familiar.
+  const typingAllowed = crownLevel >= 2
 
   // New vocab intro: one recognition per word teaches meaning (capped later)
   for (const v of vocab) {
     exercises.push(choiceToEnglish(course, v))
   }
-  // Production: spell it from tiles (short words) or type it — no more "pick the word"
+  // Production: tiles for anything that fits, typing only once it's allowed
   const productionSet = crownLevel >= 2 ? vocab : sample(vocab, Math.ceil(vocab.length / 2))
   for (const v of productionSet) {
-    if (crownLevel < 3 && isSpellable(v)) exercises.push(spellExercise(v, pool))
-    else exercises.push(typingExercise(v))
+    if (crownLevel < 3 && isSpellable(v, typingAllowed ? 9 : 14)) exercises.push(spellExercise(v, pool))
+    else if (typingAllowed) exercises.push(typingExercise(v))
+    // A multi-word lemma with no keyboard yet: build it from word chips.
+    else exercises.push(wordBankExercise(course, { text: v.lemma, translation: v.translation, vocabIds: [v.id] }))
   }
   // Listening, mostly non-select: one "what do you hear", plus spell-from-audio + dictation
   for (const v of sample(vocab, Math.min(1, vocab.length))) {
@@ -470,8 +492,8 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
     exercises.push(spellExercise(v, pool, true))
   }
   // Dictation is typing a whole sentence in a new script from sound alone — the
-  // hardest thing in the lesson, so it waits until the second pass.
-  if (crownLevel >= 1) {
+  // hardest thing in the lesson, so it waits for the typing stage.
+  if (typingAllowed) {
     for (const s of sample(lesson.sentences, Math.min(2, lesson.sentences.length))) {
       exercises.push(dictationExercise(s))
     }
@@ -482,12 +504,12 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
   }
   // Fill-in-the-blank
   for (const s of sample(lesson.sentences, Math.min(2, lesson.sentences.length))) {
-    exercises.push(clozeExercise(s))
+    exercises.push(clozeExercise(course, s, typingAllowed))
   }
   // Free translate: full-sentence production. Typing a whole sentence in an
   // unfamiliar script on first contact is punishing, so the first pass through a
   // lesson builds sentences from the word bank instead.
-  if (crownLevel >= 1) {
+  if (typingAllowed) {
     for (const s of sample(lesson.sentences, Math.min(1, lesson.sentences.length))) {
       exercises.push(translateExercise(s))
     }

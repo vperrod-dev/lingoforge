@@ -44,12 +44,19 @@ npm run gen-audio    # pre-generate MP3s (python scripts/gen-audio.py)
   fetched. Every text the app can speak — vocab, forms, **lesson sentences**,
   alphabet, phrasebook, readings — needs an entry in `gen-audio.py`, or that
   exercise is silent on any phone without a Russian/Spanish voice installed.
-- `src/ui/AudioPrompt.tsx` — the replay button for listen-first exercises. `speak()`
-  resolves false when the device made no sound; the prompt then reveals the text,
-  so a silent phone can't turn a listening exercise into a dead end.
+- `src/ui/AudioPrompt.tsx` (big, listen-first exercises) and `src/ui/SpeakerButton.tsx`
+  (every inline 🔊) are the only ways to play audio in the UI — never call `speak()`
+  from a bare `<button>`. `speak()` resolves false when the device made no sound and
+  both surfaces say so, so a phone with no Russian voice can't leave an exercise
+  looking broken. `scripts/check-audio.py` runs in `deploy.sh` and fails the build if
+  any speakable text lacks an MP3; `splitSentences`/`splitWords` in
+  `src/content/sentences.ts` have Python twins there and must stay in sync.
+- Production before typing: `typingAllowed` in `exercise-gen.ts` is `crownLevel >= 2`.
+  Below that, production means letter tiles (`spell`) and word chips (`wordBank`,
+  cloze `options`) — never a text input. Practice (`ReviewScreen`) applies the same
+  rule per word via `wordStatus(...) === 'known'`.
 - First pass through a lesson (`crownLevel === 0`) is ordered, not shuffled:
-  `TEACHING_ORDER` in `exercise-gen.ts` puts recognition before production, and
-  dictation/free translation only appear from the second pass.
+  `TEACHING_ORDER` in `exercise-gen.ts` puts recognition before production.
 
 ## Conventions
 

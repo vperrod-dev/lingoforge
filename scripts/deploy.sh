@@ -48,6 +48,11 @@ fi
 echo "==> gen-audio"
 PATH="$VENV_DIR/bin:$PATH" npm run gen-audio
 
+# A missing MP3 is silent, not loud: tts.ts falls back to Web Speech, which says
+# nothing at all on a phone with no Russian voice. Refuse to ship that.
+echo "==> check-audio"
+python3 scripts/check-audio.py
+
 echo "==> build"
 npm run build
 

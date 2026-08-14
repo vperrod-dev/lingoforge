@@ -105,6 +105,35 @@ def extract_dialogue_turns(block: str) -> list[str]:
     return extract_phrases(block)
 
 
+def split_sentences(body: str) -> list[str]:
+    """Twin of splitSentences() in src/content/sentences.ts — keep them identical."""
+    out: list[str] = []
+    for line in re.split(r"\n+", body):
+        for part in re.split(r"(?<=[.!?…])\s+", line):
+            part = part.strip()
+            if part:
+                out.append(part)
+    return out
+
+
+def split_words(body: str) -> list[str]:
+    """Twin of splitWords() in src/content/sentences.ts — every tappable word."""
+    out: list[str] = []
+    for word in re.split(r"\s+", body):
+        word = re.sub(r"^[^\w]+|[^\w]+$", "", word, flags=re.UNICODE).strip("_")
+        if word:
+            out.append(word)
+    return out
+
+
+def extract_bodies(block: str) -> list[str]:
+    """Reading passage bodies (from readings.ts): `body: '...'`."""
+    return [
+        _unescape(m).replace("\\n", "\n")
+        for m in re.findall(r"body:\s*'((?:\\.|[^'\\])+)'", block)
+    ]
+
+
 def extract_glossary(block: str) -> list[str]:
     """Glossary surface words (from readings.ts): `glossary: { 'word': 'meaning', ... }`."""
     keys: list[str] = []
@@ -162,8 +191,10 @@ async def main() -> None:
     # Phrasebook phrases (per-language)
     pb_blocks = lang_blocks("src/content/phrasebook.ts")
     for lang, block in pb_blocks.items():
-        texts = list(dict.fromkeys(extract_phrases(block)))
-        print(f"\n{lang} phrasebook phrases: {len(texts)}")
+        phrases = extract_phrases(block)
+        # Phrasebook text is tappable word by word (GlossText), so words count too.
+        texts = list(dict.fromkeys(phrases + [w for p in phrases for w in split_words(p)]))
+        print(f"\n{lang} phrasebook phrases + tappable words: {len(texts)}")
         await generate_batch(texts, lang)
 
     # Reading glossary words + dialogue turns (per-language)
@@ -175,6 +206,15 @@ async def main() -> None:
         await generate_batch(glossary, lang)
         print(f"{lang} reading dialogue turns: {len(turns)}")
         await generate_batch(turns, lang)
+        # A passage plays sentence by sentence, and every word in it is tappable.
+        bodies = extract_bodies(block)
+        passage = list(dict.fromkeys(
+            [s for b in bodies for s in split_sentences(b)]
+            + [w for b in bodies for w in split_words(b)]
+            + [w for t in turns for w in split_words(t)]
+        ))
+        print(f"{lang} reading sentences + tappable words: {len(passage)}")
+        await generate_batch(passage, lang)
 
     print(f"\nDone. Files in {OUT_DIR}/")
 

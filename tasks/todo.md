@@ -1,3 +1,42 @@
+# Phone round 3 (2026-08-14, same day)
+
+Victor re-tested after round 2: "still a lot of the audios doesn't work, I press
+and there is no sound" and "I am just learning russian, I cannot be putting full
+words in writing until more advanced — these exercises should be focus on
+learning and this is not the way".
+
+## What was still wrong
+
+- **FlashcardsScreen had its own `speak()`** using the Web Speech API directly,
+  bypassing the MP3 pipeline entirely — the "Flashcards by topic ... with audio"
+  card on the home path was silent on a phone with no Russian voice, every time.
+- **Tapped words in readings/phrasebook** were spoken with their punctuation
+  attached (`чай.`), which matches no file; only glossary keys had MP3s at all,
+  so most tappable words fell back to Web Speech.
+- **The reading "Listen" button** spoke the whole passage as one string — a file
+  that never existed. It now plays the generated per-sentence MP3s in order.
+- **Nothing said when audio failed** outside the three exercises fixed in round 2.
+- **Typing was still everywhere**: multi-word or >9-letter vocab went straight to
+  a text input at crown 0, Practice had a flat 30% chance of a typing exercise for
+  any word including brand-new ones, and the alphabet "Write" drill asked for a
+  whole word typed from audio.
+
+## Tasks
+
+- [x] FlashcardsScreen: use the shared `speak()` (MP3 first)
+- [x] `SpeakerButton`: one component for every inline 🔊, reports silence
+- [x] GlossText: strip punctuation before speaking a tapped word
+- [x] ReadingScreen: play a passage sentence by sentence
+- [x] gen-audio: reading sentences, every tappable reading/phrasebook word
+- [x] `scripts/check-audio.py` + wired into `deploy.sh` — build fails on a missing MP3
+- [x] `typingAllowed = crownLevel >= 2`: tiles and chips below that, cloze gets options
+- [x] Practice: tiles unless the word is already mature (`wordStatus === 'known'`)
+- [x] Alphabet "Write": spell-from-audio instead of typing a whole word
+- [x] Tests incl. a DOM test that a first-pass lesson renders zero text inputs
+- [x] Deploy + verify on the live URL
+
+---
+
 # Phone round 2: silent audio, typing too early, no visible way out (2026-08-14)
 
 Reported by Victor from his phone, after the 2026-08-12 fixes shipped: the first

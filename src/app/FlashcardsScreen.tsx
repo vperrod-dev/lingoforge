@@ -1,19 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Layers, Volume2, ArrowLeft, RotateCcw, Check, X } from 'lucide-react'
+import { Layers, ArrowLeft, RotateCcw, Check, X } from 'lucide-react'
 import { courses } from '../content'
 import type { Course, Unit, VocabItem } from '../content/types'
 import { useProgress } from '../state/progress'
 import { ClayButton } from '../ui/ClayButton'
+import { SpeakerButton } from '../ui/SpeakerButton'
 import { playFanfare } from '../audio/sfx'
-
-function speak(text: string, lang: string) {
-  if (!('speechSynthesis' in window)) return
-  speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = lang
-  u.rate = 0.85
-  speechSynthesis.speak(u)
-}
 
 function unitVocab(course: Course, unit: Unit): VocabItem[] {
   const ids = new Set(unit.skills.flatMap((s) => s.lessons.flatMap((l) => l.vocabIds)))
@@ -192,17 +184,7 @@ export function FlashcardsScreen() {
           >
             <div className="flex items-start justify-between gap-2">
               <span className="font-display text-3xl font-bold text-ru">{card.lemma}</span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  speak(card.lemma, course.ttsLang)
-                }}
-                className="clay clay-press flex size-11 shrink-0 items-center justify-center"
-                aria-label={`Hear ${card.lemma}`}
-              >
-                <Volume2 className="size-5 text-primary" aria-hidden />
-              </button>
+              <SpeakerButton text={card.lemma} lang={course.ttsLang} label={`Hear ${card.lemma}`} />
             </div>
             {card.hint && <span className="text-lg italic text-fg-muted">{card.hint}</span>}
             <span className="font-display text-xl font-bold">{card.translation}</span>

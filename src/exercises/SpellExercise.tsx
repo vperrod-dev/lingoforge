@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Volume2, Delete } from 'lucide-react'
+import { Delete } from 'lucide-react'
 import { speak } from '../audio/tts'
+import { SpeakerButton } from '../ui/SpeakerButton'
 import { ClayButton } from '../ui/ClayButton'
 import { isCorrectAnswer } from '../engine/answer-check'
 
@@ -53,14 +54,7 @@ export function SpellExercise({ prompt, answer, tiles, ttsText, ttsLang, onAnswe
       <div className="flex items-center gap-3">
         <p className="font-display text-2xl font-bold">{ttsText ? '🔊 Listen and spell' : prompt}</p>
         {ttsText && (
-          <button
-            type="button"
-            aria-label="Replay audio"
-            className="clay clay-press flex size-11 shrink-0 items-center justify-center text-primary"
-            onClick={() => speak(ttsText, ttsLang)}
-          >
-            <Volume2 aria-hidden />
-          </button>
+          <SpeakerButton text={ttsText} lang={ttsLang} label="Replay audio" revealOnSilence />
         )}
       </div>
 

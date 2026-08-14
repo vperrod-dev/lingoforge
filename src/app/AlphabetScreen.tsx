@@ -136,14 +136,14 @@ function productionDrill(group: AlphabetGroup): ExerciseInstance[] {
       }),
     )
 
-    // Dictation: hear word, type it
-    exercises.push({
-      kind: 'dictation',
-      ttsText: letter.example.word,
-      accept: [letter.example.word],
-      answer: letter.example.word,
-      vocabIds: [`alpha:${letter.letter}`],
-    })
+    // Hear the word, build it from tiles. Typing a whole word is a keyboard test,
+    // not an alphabet one — single letters above are the writing practice here.
+    exercises.push(
+      spellFromWord(letter.example.word, 'Spell what you hear', alphaPool, {
+        audio: true,
+        vocabIds: [`alpha:${letter.letter}`],
+      }),
+    )
   }
 
   // Add confusable pair exercises for letters in this group

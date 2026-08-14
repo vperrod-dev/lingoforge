@@ -23,9 +23,8 @@ The two things that make a phone harder than a laptop are handled explicitly:
 - **Typing a script you don't have a keyboard for.** Every typed answer carries an
   on-screen keypad — Cyrillic for Russian, the accented letters for Spanish — so
   you never need to install a system keyboard. It collapses if you already have
-  one. A **Hint** button reveals the answer a letter at a time, and the first pass
-  through a lesson builds sentences from the word bank rather than asking you to
-  free-type one.
+  one. A **Hint** button reveals the answer a letter at a time — and early on you
+  aren't asked to type at all (see "Order" below).
 - **Speaking.** Speech recognition is patchy on mobile: a browser may not have it,
   permission may be denied, the service may be unreachable. The word to say is
   always shown with its transliteration (never audio-only — phones block autoplay),
@@ -36,9 +35,11 @@ The two things that make a phone harder than a laptop are handled explicitly:
   device still makes no sound — no Russian voice installed, silent switch on —
   tapping the speaker reveals the text instead of leaving you stuck on an
   exercise you cannot hear.
-- **Order.** A first pass through a lesson is sequenced, not shuffled: you meet a
-  word, recognise it and build it from pieces before anything asks you to type it,
-  and dictation waits for the second pass.
+- **Order, and no keyboard until you're ready.** A first pass through a lesson is
+  sequenced, not shuffled: you meet a word, then recognise it, then build it from
+  letter tiles and word chips. Nothing asks you to type the script from a blank
+  field until the third pass through that lesson (and in Practice, not until the
+  word is mature) — production early on is assembling, not typing.
 
 ## Run
 
@@ -53,6 +54,8 @@ Audio plays pre-generated MP3s and falls back to the Web Speech API when a phras
 has no file (Edge/Chrome on desktop include ru-RU and es-ES voices). No audio is
 committed — `scripts/deploy.sh` runs `npm run gen-audio` to synthesize
 `public/audio/` on every deploy, so a local `npm run dev` uses the browser voices.
+`scripts/check-audio.py` then fails the deploy if anything the app can speak has
+no file: on a phone without a Russian voice that fallback is silence, not speech.
 
 ## Optional: AI lessons (Ollama)
 

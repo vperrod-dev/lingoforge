@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Volume2 } from 'lucide-react'
-import { speak } from '../audio/tts'
+import { SpeakerButton } from '../ui/SpeakerButton'
 
 interface Props {
   prompt: string
@@ -27,14 +26,7 @@ export function ChoiceExercise({ prompt, ttsText, ttsLang, options, correctIndex
       <div className="flex items-center gap-3">
         <p className="font-display text-3xl font-bold">{prompt}</p>
         {ttsText && (
-          <button
-            type="button"
-            aria-label="Play audio"
-            className="clay clay-press flex size-11 items-center justify-center text-primary"
-            onClick={() => speak(ttsText, ttsLang)}
-          >
-            <Volume2 aria-hidden />
-          </button>
+          <SpeakerButton text={ttsText} lang={ttsLang} />
         )}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

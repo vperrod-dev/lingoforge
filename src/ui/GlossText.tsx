@@ -1,13 +1,20 @@
 import { useMemo, useState } from 'react'
-import { Volume2, Plus, Check, X } from 'lucide-react'
+import { Plus, Check, X } from 'lucide-react'
 import type { Course } from '../content/types'
 import type { SrsItem } from '../engine/srs'
 import { wordStatus } from '../engine/word-status'
 import { speak } from '../audio/tts'
+import { SpeakerButton } from './SpeakerButton'
 
 interface Lookup {
   vocabId?: string
   translation?: string
+}
+
+/** What to send to TTS: the tapped surface without the punctuation glued to it —
+ *  'чай.' has no MP3, 'чай' does. */
+function spokenForm(surface: string): string {
+  return surface.replace(/^[^\p{L}\p{M}]+|[^\p{L}\p{M}]+$/gu, '')
 }
 
 function normalize(s: string): string {
@@ -82,7 +89,7 @@ export function GlossText({ text, course, glossary, srsItems, addedIds, onAdd }:
               className={cls}
               onClick={() => {
                 setSelected({ surface: chunk, info })
-                speak(chunk, course.ttsLang)
+                speak(spokenForm(chunk), course.ttsLang)
               }}
             >
               {chunk}
@@ -94,14 +101,7 @@ export function GlossText({ text, course, glossary, srsItems, addedIds, onAdd }:
       {selected && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t-4 border-primary bg-surface">
           <div className="mx-auto flex w-full max-w-2xl items-center gap-3 p-4">
-            <button
-              type="button"
-              aria-label="Hear word"
-              className="clay clay-press flex size-11 shrink-0 items-center justify-center text-primary"
-              onClick={() => speak(selected.surface, course.ttsLang)}
-            >
-              <Volume2 aria-hidden />
-            </button>
+            <SpeakerButton text={spokenForm(selected.surface)} lang={course.ttsLang} label="Hear word" />
             <div className="grow">
               <p className="font-display text-lg font-bold">{selected.surface}</p>
               <p className="text-fg-muted">{selected.info.translation ?? 'No translation — tap 🔊 to hear it'}</p>

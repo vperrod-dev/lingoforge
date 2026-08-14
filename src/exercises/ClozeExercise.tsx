@@ -9,14 +9,23 @@ interface Props {
   blankIndex: number
   translation: string
   answer: string
+  /** Chips to pick from. Absent once the learner is typing the answer instead. */
+  options?: string[]
   ttsLang: string
   onAnswer: (correct: boolean, correctAnswer: string) => void
 }
 
-export function ClozeExercise({ tokens, blankIndex, translation, answer, ttsLang, onAnswer }: Props) {
+export function ClozeExercise({ tokens, blankIndex, translation, answer, options, ttsLang, onAnswer }: Props) {
   const [text, setText] = useState('')
   const [revealed, setRevealed] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+
+  const pick = (option: string) => {
+    if (submitted) return
+    setSubmitted(true)
+    setText(option)
+    onAnswer(isCorrectAnswer(answer, option), answer)
+  }
 
   const submit = () => {
     if (submitted || !text.trim()) return
@@ -36,7 +45,14 @@ export function ClozeExercise({ tokens, blankIndex, translation, answer, ttsLang
       <p className="text-fg-muted">{translation}</p>
       <p className="font-display text-2xl font-bold leading-relaxed">
         {tokens.map((token, i) =>
-          i === blankIndex ? (
+          i === blankIndex && options ? (
+            <span
+              key={i}
+              className="clay mx-1 inline-block min-w-24 px-2 py-1 text-center text-xl font-semibold"
+            >
+              {text || '\u00a0'}
+            </span>
+          ) : i === blankIndex ? (
             <input
               key={i}
               autoFocus
@@ -55,6 +71,22 @@ export function ClozeExercise({ tokens, blankIndex, translation, answer, ttsLang
           ),
         )}
       </p>
+      {options ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              disabled={submitted}
+              onClick={() => pick(option)}
+              className="clay clay-press min-h-14 px-4 py-3 text-lg font-semibold"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
       <ScriptKeypad
         lang={ttsLang}
         disabled={submitted}
@@ -80,6 +112,8 @@ export function ClozeExercise({ tokens, blankIndex, translation, answer, ttsLang
           Check
         </ClayButton>
       </div>
+        </>
+      )}
     </div>
   )
 }

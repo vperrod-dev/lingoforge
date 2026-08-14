@@ -4,6 +4,8 @@ import { courses } from '../content'
 import type { Course, VocabItem } from '../content/types'
 import { dueItems } from '../engine/srs'
 import type { ExerciseInstance } from '../engine/exercise-gen'
+import { letterPool, spellFromWord } from '../engine/exercise-gen'
+import { wordStatus } from '../engine/word-status'
 import { LessonPlayer, type LessonResult } from '../exercises/LessonPlayer'
 import { renderExercise } from '../exercises/render'
 import { useProgress } from '../state/progress'
@@ -11,9 +13,13 @@ import { ClayButton } from '../ui/ClayButton'
 import { playFanfare } from '../audio/sfx'
 import { shuffle } from '../engine/seeded-random'
 
-function reviewExercise(course: Course, vocab: VocabItem): ExerciseInstance {
+/**
+ * `typed` is false until the word is mature: a learner still meeting a word should
+ * assemble it from letter tiles, not produce a foreign script from a blank field.
+ */
+function reviewExercise(course: Course, vocab: VocabItem, typed: boolean): ExerciseInstance {
   const distractors = shuffle(course.vocab.filter((v) => v.id !== vocab.id)).slice(0, 3)
-  // Alternate directions randomly; typing for variety
+  // Alternate directions randomly; production for variety
   const roll = Math.random()
   if (roll < 0.4) {
     const options = shuffle([vocab.translation, ...distractors.map((d) => d.translation)])
@@ -35,6 +41,9 @@ function reviewExercise(course: Course, vocab: VocabItem): ExerciseInstance {
       correctIndex: options.indexOf(vocab.lemma),
       vocabIds: [vocab.id],
     }
+  }
+  if (!typed && !vocab.lemma.includes(' ') && vocab.lemma.length <= 14) {
+    return spellFromWord(vocab.lemma, vocab.translation, letterPool(course), { vocabIds: [vocab.id] })
   }
   return {
     kind: 'typing',
@@ -61,7 +70,7 @@ export function ReviewScreen() {
       .slice(0, 12)
       .map((item) => course.vocab.find((v) => v.id === item.vocabId))
       .filter((v): v is VocabItem => Boolean(v))
-      .map((v) => reviewExercise(course, v))
+      .map((v) => reviewExercise(course, v, wordStatus(data.courses[course.id]?.srsItems[v.id]) === 'known'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing])
 

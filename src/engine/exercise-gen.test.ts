@@ -131,46 +131,70 @@ describe('generateLessonExercises balance', () => {
 })
 
 describe('difficulty ramp', () => {
-  it('never asks a first-time learner to free-type a whole sentence', () => {
+  // A learner who has just met the Cyrillic alphabet cannot produce it from a
+  // blank field. Everything with a text input waits for crown 2.
+  const KEYBOARD_KINDS = ['typing', 'translate', 'dictation']
+
+  it('gives a first-time learner no exercise with a text input', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 30; i++) {
-      expect(generateLessonExercises(ru, lesson, 0).some((e) => e.kind === 'translate')).toBe(false)
+      const kinds = generateLessonExercises(ru, lesson, 0).map((e) => e.kind)
+      expect(kinds.filter((k) => KEYBOARD_KINDS.includes(k))).toEqual([])
     }
   })
 
-  it('brings full-sentence typing back on the second pass', () => {
+  it('still gives no text input on the second pass', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    for (let i = 0; i < 30; i++) {
+      const kinds = generateLessonExercises(ru, lesson, 1).map((e) => e.kind)
+      expect(kinds.filter((k) => KEYBOARD_KINDS.includes(k))).toEqual([])
+    }
+  })
+
+  it('lets a first-time learner pick the missing word instead of spelling it', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    for (let i = 0; i < 30; i++) {
+      for (const e of generateLessonExercises(ru, lesson, 0)) {
+        if (e.kind === 'cloze') expect(e.options?.length).toBeGreaterThan(1)
+      }
+    }
+  })
+
+  it('drops the cloze chips once the learner is typing', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    for (let i = 0; i < 30; i++) {
+      for (const e of generateLessonExercises(ru, lesson, 2)) {
+        if (e.kind === 'cloze') expect(e.options).toBeUndefined()
+      }
+    }
+  })
+
+  it('brings sentence typing in once the words are familiar', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     const kinds = new Set<string>()
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 1)) kinds.add(e.kind)
+      for (const e of generateLessonExercises(ru, lesson, 2)) kinds.add(e.kind)
     }
-    expect(kinds.has('translate')).toBe(true)
+    expect(kinds.has('translate') && kinds.has('dictation')).toBe(true)
   })
 
-  it('never asks a first-time learner to type a sentence from audio alone', () => {
-    if (!lesson) throw new Error('fixture lesson missing')
-    for (let i = 0; i < 30; i++) {
-      expect(generateLessonExercises(ru, lesson, 0).some((e) => e.kind === 'dictation')).toBe(false)
-    }
-  })
-
-  it('brings dictation back on the second pass', () => {
+  it('types short words from scratch only on the fourth pass', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     const kinds = new Set<string>()
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 1)) kinds.add(e.kind)
+      for (const e of generateLessonExercises(ru, lesson, 3)) kinds.add(e.kind)
     }
-    expect(kinds.has('dictation')).toBe(true)
+    expect(kinds.has('typing')).toBe(true)
   })
 
-  it('shows a first-time learner every recognition exercise before any typed one', () => {
+  it('shows a first-time learner every recognition exercise before any production one', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 30; i++) {
       const kinds = generateLessonExercises(ru, lesson, 0).map((e) => e.kind)
       const lastChoice = kinds.lastIndexOf('choice')
-      const firstTyped = kinds.findIndex((k) => k === 'typing' || k === 'cloze')
-      if (lastChoice === -1 || firstTyped === -1) continue
-      expect(lastChoice).toBeLessThan(firstTyped)
+      const firstProduction = kinds.findIndex((k) => k === 'spell' || k === 'cloze' || k === 'wordBank')
+      if (lastChoice === -1 || firstProduction === -1) continue
+      expect(lastChoice).toBeLessThan(firstProduction)
     }
   })
 })

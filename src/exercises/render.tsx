@@ -72,6 +72,7 @@ export function renderExercise(
           blankIndex={exercise.blankIndex}
           translation={exercise.translation}
           answer={exercise.answer}
+          options={exercise.options}
           ttsLang={ttsLang}
           onAnswer={onAnswer}
         />

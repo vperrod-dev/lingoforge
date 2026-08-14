@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Volume2 } from 'lucide-react'
-import { speak } from '../audio/tts'
+import { SpeakerButton } from '../ui/SpeakerButton'
 import { ClayButton } from '../ui/ClayButton'
 import { isCorrectAnswer } from '../engine/answer-check'
 import { shuffle } from '../engine/seeded-random'
@@ -49,14 +48,7 @@ export function WordBankExercise({ sentence, translation, answerChips, distracto
       <h2 className="text-lg font-bold text-fg-muted">Build the sentence</h2>
       <div className="flex items-center gap-3">
         <p className="font-display text-2xl font-bold">{translation}</p>
-        <button
-          type="button"
-          aria-label="Play sentence audio"
-          className="clay clay-press flex size-11 shrink-0 items-center justify-center text-primary"
-          onClick={() => speak(sentence, ttsLang)}
-        >
-          <Volume2 aria-hidden />
-        </button>
+        <SpeakerButton text={sentence} lang={ttsLang} label="Play sentence audio" />
       </div>
 
       <div className="clay min-h-16 bg-bg/60 p-3" aria-label="Your answer">

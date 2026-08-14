@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Volume2, Plus, Check, Hand, Coffee, LifeBuoy } from 'lucide-react'
+import { Plus, Check, Hand, Coffee, LifeBuoy } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { courses, phrasebook } from '../content'
 import { useProgress } from '../state/progress'
-import { speak } from '../audio/tts'
 import { GlossText } from '../ui/GlossText'
+import { SpeakerButton } from '../ui/SpeakerButton'
 
 const packIcons: Record<string, LucideIcon> = {
   hand: Hand,
@@ -43,14 +43,7 @@ export function PhrasebookScreen() {
             <div className="flex flex-col gap-2">
               {pack.phrases.map((phrase, i) => (
                 <div key={i} className="clay flex items-center gap-3 p-3">
-                  <button
-                    type="button"
-                    aria-label="Hear phrase"
-                    className="text-primary"
-                    onClick={() => speak(phrase.text, course.ttsLang)}
-                  >
-                    <Volume2 className="size-5" aria-hidden />
-                  </button>
+                  <SpeakerButton text={phrase.text} lang={course.ttsLang} label="Hear phrase" />
                   <span className="grow">
                     <span className="block font-semibold">
                       <GlossText

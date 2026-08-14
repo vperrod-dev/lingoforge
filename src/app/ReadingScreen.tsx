@@ -5,7 +5,9 @@ import { courses, getReading } from '../content'
 import type { CourseId } from '../content/types'
 import { useProgress } from '../state/progress'
 import { speak } from '../audio/tts'
+import { splitSentences } from '../content/sentences'
 import { GlossText } from '../ui/GlossText'
+import { SpeakerButton } from '../ui/SpeakerButton'
 import { ClayButton } from '../ui/ClayButton'
 import { optionOrder } from './option-order'
 
@@ -39,6 +41,13 @@ export function ReadingScreen() {
   const fullText =
     text.kind === 'dialogue' ? (text.turns ?? []).map((t) => t.text).join(' ') : text.body ?? ''
 
+  // One MP3 per sentence exists; a whole passage never had one, so play them in order.
+  const playWholeText = async () => {
+    for (const sentence of splitSentences(fullText)) {
+      await speak(sentence, course.ttsLang)
+    }
+  }
+
   const questions = text.questions ?? []
   const allAnswered = questions.length > 0 && questions.every((_, i) => answers[i] !== undefined)
   const correctCount = questions.filter((q, i) => answers[i] === q.correctIndex).length
@@ -64,7 +73,7 @@ export function ReadingScreen() {
         <button
           type="button"
           aria-label="Listen"
-          onClick={() => speak(fullText, course.ttsLang)}
+          onClick={playWholeText}
           className="clay clay-press flex size-11 shrink-0 items-center justify-center text-primary"
         >
           <Volume2 aria-hidden />
@@ -96,14 +105,7 @@ export function ReadingScreen() {
             <div key={i} className="clay bg-bg p-3">
               <div className="mb-1 flex items-center gap-2">
                 <span className="text-xs font-bold text-fg-muted">{turn.speaker}</span>
-                <button
-                  type="button"
-                  aria-label="Play line"
-                  className="text-primary"
-                  onClick={() => speak(turn.text, course.ttsLang)}
-                >
-                  <Volume2 className="size-3.5" aria-hidden />
-                </button>
+                <SpeakerButton text={turn.text} lang={course.ttsLang} label="Play line" />
               </div>
               <p className="text-lg">
                 <GlossText text={turn.text} {...glossProps} />
