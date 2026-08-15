@@ -41,6 +41,12 @@ function isVisionObject(v: unknown): v is VisionResponse['objects'][number] {
 const MAX_TEXT_LENGTH = 300
 const capText = (s: string) => (s.length > MAX_TEXT_LENGTH ? s.slice(0, MAX_TEXT_LENGTH) : s)
 const clampPercent = (n: number) => Math.min(100, Math.max(0, n))
+// A swapped pair (x2 < x1) renders as a negative CSS width, hiding the box.
+const clampBox = ([x1, y1, x2, y2]: [number, number, number, number]): [number, number, number, number] => {
+  const [left, right] = [clampPercent(x1), clampPercent(x2)].sort((a, b) => a - b)
+  const [top, bottom] = [clampPercent(y1), clampPercent(y2)].sort((a, b) => a - b)
+  return [left, top, right, bottom]
+}
 
 export async function identifyObjects(
   imageBase64: string,
@@ -73,7 +79,7 @@ Rules:
     pronunciation: capText(o.pronunciation),
     example: capText(o.example),
     exampleTranslation: capText(o.exampleTranslation),
-    bbox: o.bbox.map(clampPercent) as [number, number, number, number],
+    bbox: clampBox(o.bbox),
   }))
 }
 

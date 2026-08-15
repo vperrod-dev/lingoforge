@@ -61,6 +61,14 @@ describe('identifyObjects', () => {
     expect(result.bbox).toEqual([0, 40, 100, 100])
   })
 
+  it('orders swapped bbox pairs so the box never gets a negative width or height', async () => {
+    mockGenerateVision.mockResolvedValue({
+      objects: [{ ...validObject, bbox: [90, 10, 20, 90] }],
+    })
+    const [result] = await identifyObjects('img', 'es-ES')
+    expect(result.bbox).toEqual([20, 10, 90, 90])
+  })
+
   it('caps overly long text fields instead of passing them through to the UI', async () => {
     const huge = 'x'.repeat(1000)
     mockGenerateVision.mockResolvedValue({
