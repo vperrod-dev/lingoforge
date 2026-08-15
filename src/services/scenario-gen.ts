@@ -1,7 +1,7 @@
 import { generateJSON } from './ollama'
 import { langName } from './lang-names'
 import type { ExerciseInstance } from '../engine/exercise-gen'
-import { sample } from '../engine/exercise-gen'
+import { sample } from '../engine/seeded-random'
 
 export interface ScenarioPhrase {
   phrase: string

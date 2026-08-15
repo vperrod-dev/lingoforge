@@ -1,6 +1,7 @@
 import type { Course, Unit, VocabItem } from '../content/types'
 import type { ExerciseInstance } from './exercise-gen'
-import { choiceToEnglish, choiceToTarget, sample } from './exercise-gen'
+import { choiceToEnglish, choiceToTarget } from './exercise-gen'
+import { sample } from './seeded-random'
 
 const QUESTIONS_PER_UNIT = 3
 /** Ratio of a unit's questions that must be correct to count as "passed" */

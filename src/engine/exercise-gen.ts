@@ -1,5 +1,6 @@
 import type { Course, Lesson, VocabItem } from '../content/types'
 import { isSpeechSupported } from '../audio/stt'
+import { sample, shuffle } from './seeded-random'
 
 export type ExerciseInstance =
   | {
@@ -123,19 +124,6 @@ export type ExerciseInstance =
       kind: 'phraseOrder'
       phrases: { line: string; translation: string }[]
     }
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-export function sample<T>(arr: T[], n: number): T[] {
-  return shuffle(arr).slice(0, n)
-}
 
 function distractorTranslations(course: Course, exclude: VocabItem, n: number): string[] {
   const pool = course.vocab.filter((v) => v.id !== exclude.id && v.translation !== exclude.translation)
@@ -356,7 +344,14 @@ export function errorCorrectionExercise(
     .filter((c) => c.vocab)
 
   const pick = candidates.length > 0 ? sample(candidates, 1)[0] : null
-  const errorIndex = pick?.i ?? Math.floor(Math.random() * tokens.length)
+  // No vocab-backed candidate: fall back to a token that actually contains a
+  // letter. A raw random index can land on a punctuation-only token, whose core
+  // is empty — the exercise would then ask the learner to spot a swap in "".
+  const wordTokens = tokens
+    .map((t, i) => ({ i, core: splitPunctuation(t).core }))
+    .filter((t) => /\p{L}/u.test(t.core))
+  if (!pick && wordTokens.length === 0) return null
+  const errorIndex = pick?.i ?? sample(wordTokens, 1)[0].i
   const original = tokens[errorIndex]
   const { core, suffix } = splitPunctuation(original)
 

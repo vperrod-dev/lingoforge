@@ -58,6 +58,17 @@ describe('errorCorrectionExercise', () => {
     }
   })
 
+  it('never swaps a punctuation-only token when the sentence has no recognizable vocab', () => {
+    // The fallback used to pick a raw random index, so it could land on "—" and
+    // build an exercise whose "wrong word" was an empty core.
+    const noVocab = { text: 'zzz — qqq !', translation: 'nonsense', vocabIds: [] }
+    for (let i = 0; i < 30; i++) {
+      const ex = errorCorrectionExercise(ru, noVocab)
+      if (!ex || ex.kind !== 'errorCorrection') throw new Error('wrong kind')
+      expect(ex.correctToken).toMatch(/\p{L}/u)
+    }
+  })
+
   it('never swaps in the literal string "undefined" when the vocab word has no alternate forms and the course is too small for a distractor lemma', () => {
     // Single-vocab, single-form "course" — the exact conditions that used to leave
     // wrongCore undefined: no altForms, and distractorLemmas has nothing to exclude to.
