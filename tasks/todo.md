@@ -5,7 +5,7 @@
 - [x] `letters` stage until every letter scheduled in units 1–2 met; missing-letter blanks drawn from met letters
 - [x] Unit 0 removed from the path; Alphabet tab = extra practice (still counts letters)
 - [x] tests 406 pass; Playwright walk local (lesson 1 opens with П Р И В Е Т, 0 inputs through letters/tiles; typing at typing stage crown 2)
-- [ ] deploy + verify live
+- [x] deploy + verify live (5391026 → https://lingoforge.pages.dev; live walk: lesson 1 opens with П Р И В Е Т, 200 beginner exercises / 0 inputs, typing only at typing stage crown 2)
 
 # Round 4 — 2026-08-17: beginners never write whole words; alphabet is Unit 0 (superseded same day by 4b)
 
