@@ -1,5 +1,6 @@
 import { generateVision } from './ollama'
 import { langName } from './lang-names'
+import { capText } from './ai-text'
 
 export interface DetectedObject {
   nameEn: string
@@ -36,10 +37,8 @@ function isVisionObject(v: unknown): v is VisionResponse['objects'][number] {
   )
 }
 
-// The model's response feeds straight into layout percentages and on-screen text —
-// clamp/cap it instead of trusting an adversarial or malformed reply.
-const MAX_TEXT_LENGTH = 300
-const capText = (s: string) => (s.length > MAX_TEXT_LENGTH ? s.slice(0, MAX_TEXT_LENGTH) : s)
+// The model's bbox feeds straight into layout percentages — clamp it instead of
+// trusting an adversarial or malformed reply.
 const clampPercent = (n: number) => Math.min(100, Math.max(0, n))
 // A swapped pair (x2 < x1) renders as a negative CSS width, hiding the box.
 const clampBox = ([x1, y1, x2, y2]: [number, number, number, number]): [number, number, number, number] => {

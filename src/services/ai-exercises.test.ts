@@ -42,6 +42,12 @@ describe('generateTopicVocab', () => {
     mockGenerateJSON.mockResolvedValue(null)
     await expect(generateTopicVocab('animals', 'es-ES')).rejects.toThrow('unusable vocabulary')
   })
+
+  it('caps over-long text so it cannot flood the UI', async () => {
+    mockGenerateJSON.mockResolvedValue({ vocab: [{ ...validItem, example: 'x'.repeat(1000) }] })
+    const [item] = await generateTopicVocab('animals', 'es-ES')
+    expect(item.example).toHaveLength(300)
+  })
 })
 
 describe('topicVocabToExercises', () => {

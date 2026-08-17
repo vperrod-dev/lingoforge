@@ -37,6 +37,14 @@ describe('generateScenario', () => {
     })
   })
 
+  it('caps over-long dialogue lines so they cannot flood the UI', async () => {
+    mockGenerateJSON.mockResolvedValue({
+      dialogue: [{ ...validLine, line: 'x'.repeat(1000) }],
+    })
+    const result = await generateScenario('ordering coffee', 'es-ES')
+    expect(result.dialogue[0].line).toHaveLength(300)
+  })
+
   it('drops dialogue lines with an invalid speaker', async () => {
     mockGenerateJSON.mockResolvedValue({
       vocab: [validVocab],

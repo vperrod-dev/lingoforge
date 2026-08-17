@@ -1,5 +1,6 @@
 import { generateJSON } from './ollama'
 import { langName } from './lang-names'
+import { capText } from './ai-text'
 import type { ExerciseInstance } from '../engine/exercise-gen'
 import { sample } from '../engine/seeded-random'
 
@@ -95,11 +96,23 @@ Rules:
     throw new Error('The AI returned an unusable scenario — please try again')
   }
   return {
-    title: typeof result?.title === 'string' ? result.title : situation,
-    culturalTip: typeof result?.culturalTip === 'string' ? result.culturalTip : '',
-    vocab,
-    phrases,
-    dialogue,
+    title: capText(typeof result?.title === 'string' ? result.title : situation),
+    culturalTip: capText(typeof result?.culturalTip === 'string' ? result.culturalTip : ''),
+    vocab: vocab.map((v) => ({
+      word: capText(v.word),
+      translation: capText(v.translation),
+      pronunciation: capText(v.pronunciation),
+    })),
+    phrases: phrases.map((p) => ({
+      phrase: capText(p.phrase),
+      translation: capText(p.translation),
+      usage: capText(p.usage),
+    })),
+    dialogue: dialogue.map((d) => ({
+      speaker: d.speaker,
+      line: capText(d.line),
+      translation: capText(d.translation),
+    })),
   }
 }
 

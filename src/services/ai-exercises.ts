@@ -1,5 +1,6 @@
 import { generateJSON } from './ollama'
 import { langName } from './lang-names'
+import { capText } from './ai-text'
 import type { ExerciseInstance } from '../engine/exercise-gen'
 import { sample } from '../engine/seeded-random'
 
@@ -53,7 +54,13 @@ Rules:
   if (vocab.length === 0) {
     throw new Error('The AI returned unusable vocabulary — please try again')
   }
-  return vocab
+  return vocab.map((v) => ({
+    word: capText(v.word),
+    translation: capText(v.translation),
+    pronunciation: capText(v.pronunciation),
+    example: capText(v.example),
+    exampleTranslation: capText(v.exampleTranslation),
+  }))
 }
 
 export function topicVocabToExercises(
