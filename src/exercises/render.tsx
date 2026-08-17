@@ -23,7 +23,7 @@ export function renderExercise(
     case 'choice':
       return (
         <ChoiceExercise
-          title={exercise.ttsText ? 'What does this mean?' : 'Pick the translation'}
+          title={exercise.title ?? (exercise.ttsText ? 'What does this mean?' : 'Pick the translation')}
           prompt={exercise.prompt}
           ttsText={exercise.ttsText}
           ttsLang={ttsLang}
@@ -161,6 +161,7 @@ export function renderExercise(
           answer={exercise.answer}
           tiles={exercise.tiles}
           ttsText={exercise.ttsText}
+          shown={exercise.shown}
           ttsLang={ttsLang}
           onAnswer={onAnswer}
         />

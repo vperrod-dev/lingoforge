@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ScriptKeypad } from '../ui/ScriptKeypad'
 import { Volume2, MessageCircle } from 'lucide-react'
 import { speak } from '../audio/tts'
 import { ClayButton } from '../ui/ClayButton'
@@ -99,6 +100,7 @@ export function DialogueExercise({ lines, ttsLang, onAnswer }: Props) {
                       value={inputs[i] ?? ''}
                       disabled={submitted}
                       onChange={(e) => handleInput(i, e.target.value)}
+                      onFocus={() => setCurrentBlank(blankIdx)}
                       onKeyDown={(e) => handleKeyDown(e, i)}
                       placeholder="Type your response..."
                       className="clay w-full px-3 py-1.5 text-sm font-semibold focus:outline-none focus-visible:outline-3 focus-visible:outline-primary"
@@ -118,6 +120,13 @@ export function DialogueExercise({ lines, ttsLang, onAnswer }: Props) {
           )
         })}
       </div>
+
+      <ScriptKeypad
+        lang={ttsLang}
+        disabled={submitted}
+        onInsert={(char) => handleInput(userLineIndices[currentBlank], (inputs[userLineIndices[currentBlank]] ?? '') + char)}
+        onBackspace={() => handleInput(userLineIndices[currentBlank], (inputs[userLineIndices[currentBlank]] ?? '').slice(0, -1))}
+      />
 
       <ClayButton variant="primary" disabled={!allFilled || submitted} onClick={submit}>
         Check

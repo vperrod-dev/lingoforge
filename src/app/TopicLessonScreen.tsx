@@ -6,6 +6,8 @@ import { topicVocabToExercises } from '../services/ai-exercises'
 import { LessonPlayer, type LessonResult } from '../exercises/LessonPlayer'
 import { renderExercise } from '../exercises/render'
 import { useProgress } from '../state/progress'
+import { courses } from '../content'
+import { courseStage } from '../engine/production-stage'
 import { Confetti } from '../ui/Confetti'
 import { ClayButton } from '../ui/ClayButton'
 import { playFanfare } from '../audio/sfx'
@@ -40,6 +42,7 @@ export function TopicLessonScreen() {
   const navigate = useNavigate()
   const { addXp, addStudyMinutes, reviewVocab } = useProgress()
   const data = useProgress((s) => s.data)
+  const stage = courseStage(courses[data.activeCourse], data.courses[data.activeCourse]?.lessonCompletions ?? {})
   const [result, setResult] = useState<LessonResult | null>(null)
 
   const lessonData: TopicLessonData | null = useMemo(() => {
@@ -54,8 +57,8 @@ export function TopicLessonScreen() {
   }, [])
 
   const exercises = useMemo(
-    () => lessonData ? topicVocabToExercises(lessonData.vocab) : [],
-    [lessonData],
+    () => lessonData ? topicVocabToExercises(lessonData.vocab, stage) : [],
+    [lessonData, stage],
   )
 
   if (!lessonData || exercises.length === 0) {

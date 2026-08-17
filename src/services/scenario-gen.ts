@@ -2,7 +2,10 @@ import { generateJSON } from './ollama'
 import { langName } from './lang-names'
 import { capText } from './ai-text'
 import type { ExerciseInstance } from '../engine/exercise-gen'
+import { blanksFor, spellFromWord } from '../engine/exercise-gen'
+import type { Stage } from '../engine/production-stage'
 import { sample } from '../engine/seeded-random'
+import { lettersOf } from './ai-exercises'
 
 export interface ScenarioPhrase {
   phrase: string
@@ -119,9 +122,12 @@ Rules:
 export function scenarioToExercises(
   scenario: ScenarioData,
   ttsLang: string,
+  stage: Stage,
 ): ExerciseInstance[] {
   const exercises: ExerciseInstance[] = []
   const { vocab, phrases, dialogue } = scenario
+  const typing = stage === 'typing'
+  const pool = lettersOf(vocab.map((v) => v.word))
 
   // Phase 1: Vocab recognition (target → English)
   for (const v of vocab) {
@@ -164,18 +170,20 @@ export function scenarioToExercises(
     const tokens = line.line.split(/\s+/)
     if (tokens.length < 2) continue
     const blankIndex = sample(tokens.map((_, i) => i), 1)[0]
+    const distractors = sample(vocab.filter((v) => v.word !== tokens[blankIndex]), 3).map((v) => v.word)
     exercises.push({
       kind: 'cloze',
       tokens,
       blankIndex,
       translation: line.translation,
       answer: tokens[blankIndex],
+      ...(typing ? {} : { options: sample([tokens[blankIndex], ...distractors], 4) }),
       vocabIds: [`scenario:${line.line}`],
     })
   }
 
-  // Phase 4: Dialogue exercise — fill in your part of the conversation
-  if (dialogue.length >= 4) {
+  // Phase 4: Dialogue exercise — type your part of the conversation (typing stage only)
+  if (typing && dialogue.length >= 4) {
     exercises.push({
       kind: 'dialogue',
       lines: dialogue.map((d) => ({
@@ -199,15 +207,28 @@ export function scenarioToExercises(
     })
   }
 
-  // Phase 6: Typing for key phrases
-  for (const p of sample(phrases, Math.min(3, phrases.length))) {
-    exercises.push({
-      kind: 'typing',
-      prompt: p.translation,
-      accept: [p.phrase, p.phrase.toLowerCase()],
-      answer: p.phrase,
-      vocabIds: [`scenario:${p.phrase}`],
-    })
+  // Phase 6: Produce key phrases — typing only at the typing stage, else key words
+  // from letter tiles (whole word after the alphabet, missing letters before)
+  if (typing) {
+    for (const p of sample(phrases, Math.min(3, phrases.length))) {
+      exercises.push({
+        kind: 'typing',
+        prompt: p.translation,
+        accept: [p.phrase, p.phrase.toLowerCase()],
+        answer: p.phrase,
+        vocabIds: [`scenario:${p.phrase}`],
+      })
+    }
+  } else {
+    for (const v of sample(vocab, Math.min(3, vocab.length))) {
+      const wholeWord = stage === 'tiles' && !v.word.includes(' ') && v.word.length <= 9
+      exercises.push(
+        spellFromWord(v.word, v.translation, pool, {
+          vocabIds: [`scenario:${v.word}`],
+          ...(wholeWord ? {} : { blanks: blanksFor(v.word) }),
+        }),
+      )
+    }
   }
 
   // Phase 7: Listening for vocab

@@ -2,8 +2,9 @@ import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import { Lock, Check, Star, Hand, Sparkles, Coffee, Package, Users, MessageCircle, MapPin, Home, Hash, Clock, Wand2, Theater, Camera, GraduationCap, ChevronDown, ChevronUp, BookOpen, MessagesSquare, Layers } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { courses } from '../content'
+import { courses, ruAlphabet } from '../content'
 import type { CourseId } from '../content/types'
+import { ALPHABET_DRILL_IDS, alphabetDone, alphabetDrillDone } from '../engine/production-stage'
 import { useState } from 'react'
 import { useProfiles } from '../state/profiles'
 import { useProgress } from '../state/progress'
@@ -31,20 +32,87 @@ export function PathScreen() {
   const course = courses[data.activeCourse]
   const completions = data.courses[course.id]?.lessonCompletions ?? {}
 
-  // A lesson is unlocked when all lessons before it (path order) are completed at least once
-  const orderedLessons = course.units.flatMap((u) => u.skills.flatMap((s) => s.lessons))
-  const firstIncomplete = orderedLessons.findIndex((l) => !completions[l.id])
-  const unlockedUpTo = firstIncomplete === -1 ? orderedLessons.length : firstIncomplete
+  // Russian starts with Unit 0, the alphabet: one path node per drill, before "First words".
+  const alphabetNodes = course.id === 'ru'
+    ? ALPHABET_DRILL_IDS.map((id) => ({
+        id,
+        title: id === 'alpha-confusables' ? 'Confusable pairs' : (ruAlphabet.groups.find((g) => `alpha-${g.id}` === id)?.title ?? id),
+      }))
+    : []
+  const crownsOf = (id: string) => (id.startsWith('alpha-') ? Number(alphabetDrillDone(id, completions)) : (completions[id] ?? 0))
+
+  // A node is unlocked when all nodes before it (path order) are completed at least once
+  const orderedIds = [...alphabetNodes.map((n) => n.id), ...course.units.flatMap((u) => u.skills.flatMap((s) => s.lessons.map((l) => l.id)))]
+  const firstIncomplete = orderedIds.findIndex((id) => !crownsOf(id))
+  const unlockedUpTo = firstIncomplete === -1 ? orderedIds.length : firstIncomplete
 
   const [roadmapOpen, setRoadmapOpen] = useState(false)
 
-  const unitProgress = course.units.map((unit) => {
-    const unitLessons = unit.skills.flatMap((s) => s.lessons)
-    const completed = unitLessons.filter((l) => (completions[l.id] ?? 0) > 0).length
-    return { unit, total: unitLessons.length, completed }
-  })
+  const unitProgress = [
+    ...(alphabetNodes.length > 0
+      ? [{ unit: { id: 'alphabet', title: 'The Cyrillic alphabet', level: 'A0', locked: false }, total: alphabetNodes.length, completed: alphabetNodes.filter((n) => crownsOf(n.id)).length }]
+      : []),
+    ...course.units.map((unit) => {
+      const unitLessons = unit.skills.flatMap((s) => s.lessons)
+      const completed = unitLessons.filter((l) => (completions[l.id] ?? 0) > 0).length
+      return { unit, total: unitLessons.length, completed }
+    }),
+  ]
 
-  let lessonIndex = -1
+  let lessonIndex = alphabetNodes.length - 1
+
+  const pathNode = (id: string, title: string, to: string, index: number) => {
+    const crowns = crownsOf(id)
+    const unlocked = index <= unlockedUpTo
+    const isNext = index === unlockedUpTo
+    const node = (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className={`clay flex min-h-20 w-full max-w-sm items-center gap-4 p-4 ${
+          !unlocked ? 'opacity-50' : 'clay-press'
+        } ${isNext ? (course.id === 'ru' ? 'border-ru' : 'border-es') : ''} ${
+          crowns > 0 ? 'border-accent' : ''
+        }`}
+      >
+        <span
+          className={`flex size-12 shrink-0 items-center justify-center rounded-full border-3 ${
+            crowns > 0
+              ? 'border-green-700 bg-accent text-on-primary'
+              : unlocked
+                ? 'border-indigo-700 bg-primary text-on-primary'
+                : 'border-border-soft bg-bg text-fg-muted'
+          }`}
+        >
+          {crowns > 0 ? <Check aria-hidden /> : unlocked ? <Star aria-hidden /> : <Lock aria-hidden />}
+        </span>
+        <span className="grow text-left">
+          <span className="block font-display text-lg font-bold">{title}</span>
+          {crowns > 0 && !id.startsWith('alpha-') && (
+            <span className="flex gap-0.5" aria-label={`Level ${crowns} of 5`}>
+              {Array.from({ length: 5 }, (_, i) => (
+                <Star
+                  key={i}
+                  className={`size-4 ${i < crowns ? 'fill-gold text-gold' : 'text-border-soft'}`}
+                  aria-hidden
+                />
+              ))}
+            </span>
+          )}
+        </span>
+      </motion.div>
+    )
+    return unlocked ? (
+      <Link key={id} to={to} className="w-full max-w-sm">
+        {node}
+      </Link>
+    ) : (
+      <div key={id} className="w-full max-w-sm" aria-disabled>
+        {node}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,10 +141,10 @@ export function PathScreen() {
 
       <VoiceWarning lang={course.ttsLang} courseName={course.name} />
 
-      {course.id === 'ru' && unlockedUpTo === 0 && (
+      {course.id === 'ru' && !alphabetDone('ru', completions) && (
         <Link to="/alphabet" className="clay clay-press block border-ru bg-red-50 p-4">
           <p className="font-display text-lg font-bold">Start here: the Cyrillic alphabet</p>
-          <p className="text-fg-muted">Russian is phonetic — once you can read, everything unlocks. ~2 weeks, 15 min a day.</p>
+          <p className="text-fg-muted">Russian is phonetic — learn the letters first and every lesson gets easier. Five short drills.</p>
         </Link>
       )}
 
@@ -208,6 +276,21 @@ export function PathScreen() {
         </span>
       </Link>
 
+      {alphabetNodes.length > 0 && (
+        <section id="unit-alphabet" className="flex flex-col gap-4">
+          <div className="clay bg-primary p-4 text-on-primary">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-xl font-bold">The Cyrillic alphabet</h2>
+              <span className="rounded-full border-2 border-on-primary/40 px-2 py-0.5 text-xs font-bold">A0</span>
+            </div>
+            <p className="text-sm opacity-90">Unit 0 — meet the 33 letters, group by group. Words come next.</p>
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            {alphabetNodes.map((n, i) => pathNode(n.id, n.title, `/alphabet/${n.id}`, i))}
+          </div>
+        </section>
+      )}
+
       {course.units.map((unit) => (
         <section key={unit.id} id={`unit-${unit.id}`} className="flex flex-col gap-4">
           <div className={`clay bg-primary p-4 text-on-primary ${unit.locked ? 'opacity-60' : ''}`}>
@@ -233,56 +316,7 @@ export function PathScreen() {
                 </h3>
                 {skill.lessons.map((lesson) => {
                   lessonIndex++
-                  const crowns = completions[lesson.id] ?? 0
-                  const unlocked = lessonIndex <= unlockedUpTo
-                  const isNext = lessonIndex === unlockedUpTo
-                  const node = (
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      className={`clay flex min-h-20 w-full max-w-sm items-center gap-4 p-4 ${
-                        !unlocked ? 'opacity-50' : 'clay-press'
-                      } ${isNext ? (course.id === 'ru' ? 'border-ru' : 'border-es') : ''} ${
-                        crowns > 0 ? 'border-accent' : ''
-                      }`}
-                    >
-                      <span
-                        className={`flex size-12 shrink-0 items-center justify-center rounded-full border-3 ${
-                          crowns > 0
-                            ? 'border-green-700 bg-accent text-on-primary'
-                            : unlocked
-                              ? 'border-indigo-700 bg-primary text-on-primary'
-                              : 'border-border-soft bg-bg text-fg-muted'
-                        }`}
-                      >
-                        {crowns > 0 ? <Check aria-hidden /> : unlocked ? <Star aria-hidden /> : <Lock aria-hidden />}
-                      </span>
-                      <span className="grow text-left">
-                        <span className="block font-display text-lg font-bold">{lesson.title}</span>
-                        {crowns > 0 && (
-                          <span className="flex gap-0.5" aria-label={`Level ${crowns} of 5`}>
-                            {Array.from({ length: 5 }, (_, i) => (
-                              <Star
-                                key={i}
-                                className={`size-4 ${i < crowns ? 'fill-gold text-gold' : 'text-border-soft'}`}
-                                aria-hidden
-                              />
-                            ))}
-                          </span>
-                        )}
-                      </span>
-                    </motion.div>
-                  )
-                  return unlocked ? (
-                    <Link key={lesson.id} to={`/lesson/${course.id}/${lesson.id}`} className="w-full max-w-sm">
-                      {node}
-                    </Link>
-                  ) : (
-                    <div key={lesson.id} className="w-full max-w-sm" aria-disabled>
-                      {node}
-                    </div>
-                  )
+                  return pathNode(lesson.id, lesson.title, `/lesson/${course.id}/${lesson.id}`, lessonIndex)
                 })}
               </div>
             )

@@ -11,6 +11,8 @@ interface Props {
   tiles: string[]
   /** When set, the word is spoken — a listening + spelling drill */
   ttsText?: string
+  /** Missing-letter mode: the word with null for each blank; tiles fill only the blanks */
+  shown?: (string | null)[]
   ttsLang: string
   onAnswer: (correct: boolean, correctAnswer: string) => void
 }
@@ -20,7 +22,7 @@ interface Tile {
   letter: string
 }
 
-export function SpellExercise({ prompt, answer, tiles, ttsText, ttsLang, onAnswer }: Props) {
+export function SpellExercise({ prompt, answer, tiles, ttsText, shown, ttsLang, onAnswer }: Props) {
   const bank = useMemo<Tile[]>(() => tiles.map((letter, id) => ({ id, letter })), [tiles])
 
   const [placed, setPlaced] = useState<Tile[]>([])
@@ -30,9 +32,11 @@ export function SpellExercise({ prompt, answer, tiles, ttsText, ttsLang, onAnswe
     if (ttsText) speak(ttsText, ttsLang)
   }, [ttsText, ttsLang])
 
+  const blankCount = shown ? shown.filter((ch) => ch === null).length : Infinity
+
   const add = (tile: Tile) => {
     if (submitted) return
-    setPlaced((p) => (p.some((t) => t.id === tile.id) ? p : [...p, tile]))
+    setPlaced((p) => (p.some((t) => t.id === tile.id) || p.length >= blankCount ? p : [...p, tile]))
   }
 
   const backspace = () => {
@@ -43,16 +47,42 @@ export function SpellExercise({ prompt, answer, tiles, ttsText, ttsLang, onAnswe
   const submit = () => {
     if (submitted) return
     setSubmitted(true)
-    const given = placed.map((t) => t.letter).join('')
+    const letters = placed.map((t) => t.letter)
+    const given = shown ? shown.map((ch) => ch ?? letters.shift() ?? '').join('') : letters.join('')
     onAnswer(isCorrectAnswer(answer, given), answer)
   }
 
+  // Missing-letter mode: fixed letters inline, blanks fill left to right
+  let nextBlank = 0
+  const wordSlots = shown?.map((ch, i) => {
+    if (ch !== null) {
+      return (
+        <span key={i} className="min-w-6 text-center text-2xl font-bold">
+          {ch}
+        </span>
+      )
+    }
+    const tile = placed[nextBlank++]
+    return tile ? (
+      <button
+        key={i}
+        type="button"
+        onClick={() => setPlaced((p) => p.filter((t) => t.id !== tile.id))}
+        className="clay clay-press min-w-9 bg-primary px-2 py-1 text-center text-xl font-bold text-on-primary"
+      >
+        {tile.letter}
+      </button>
+    ) : (
+      <span key={i} aria-label="missing letter" className="inline-block h-9 min-w-9 rounded-lg border-2 border-dashed border-primary/60" />
+    )
+  })
+
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-lg font-bold text-fg-muted">Spell the word</h2>
+      <h2 className="text-lg font-bold text-fg-muted">{shown ? 'Complete the word' : 'Spell the word'}</h2>
 
       <div className="flex items-center gap-3">
-        <p className="font-display text-2xl font-bold">{ttsText ? '🔊 Listen and spell' : prompt}</p>
+        <p className="font-display text-2xl font-bold">{ttsText && !shown ? '🔊 Listen and spell' : prompt}</p>
         {ttsText && (
           <SpeakerButton text={ttsText} lang={ttsLang} label="Replay audio" revealOnSilence />
         )}
@@ -60,8 +90,8 @@ export function SpellExercise({ prompt, answer, tiles, ttsText, ttsLang, onAnswe
 
       {/* Assembled letters */}
       <div className="clay flex min-h-16 items-center gap-1 bg-bg/60 p-3" aria-label="Your spelling">
-        <div className="flex grow flex-wrap gap-1">
-          {placed.map((tile) => (
+        <div className="flex grow flex-wrap items-center gap-1">
+          {wordSlots ?? placed.map((tile) => (
             <button
               key={tile.id}
               type="button"

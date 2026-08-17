@@ -53,7 +53,7 @@ describe('generateTopicVocab', () => {
 describe('topicVocabToExercises', () => {
   it('blanks the vocab word in the cloze even when it carries trailing punctuation', () => {
     const item = { ...validItem, word: 'gato', example: 'Veo un gato.', exampleTranslation: 'I see a cat.' }
-    const cloze = topicVocabToExercises([item]).find((e): e is Cloze => e.kind === 'cloze')
+    const cloze = topicVocabToExercises([item], 'typing').find((e): e is Cloze => e.kind === 'cloze')
     expect(cloze && cloze.tokens[cloze.blankIndex]).toBe('gato.')
   })
 
@@ -62,13 +62,25 @@ describe('topicVocabToExercises', () => {
       const [word, translation] = s.split('/')
       return { word, translation, pronunciation: '', example: `Un ${word}.`, exampleTranslation: `A ${translation}.` }
     })
-    const indexes = topicVocabToExercises(vocab)
+    const indexes = topicVocabToExercises(vocab, 'typing')
       .filter((e) => e.kind === 'choice' || e.kind === 'listening')
       .map((e) => (e as WithCorrect).correctIndex)
     expect(indexes).not.toContain(-1)
   })
 
   it('returns no exercises for empty input', () => {
-    expect(topicVocabToExercises([])).toEqual([])
+    expect(topicVocabToExercises([], 'typing')).toEqual([])
+  })
+
+  it('never emits a text-input exercise before the typing stage', () => {
+    const vocab = ['gato/cat', 'perro/dog', 'pez/fish', 'ave/bird'].map((s) => {
+      const [word, translation] = s.split('/')
+      return { word, translation, pronunciation: '', example: `Un ${word}.`, exampleTranslation: `A ${translation}.` }
+    })
+    for (const stage of ['letters', 'tiles'] as const) {
+      const kinds = topicVocabToExercises(vocab, stage)
+      expect(kinds.some((e) => e.kind === 'typing')).toBe(false)
+      expect(kinds.filter((e) => e.kind === 'cloze').every((e) => (e.options?.length ?? 0) > 1)).toBe(true)
+    }
   })
 })

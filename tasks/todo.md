@@ -1,3 +1,20 @@
+# Round 4 — 2026-08-17: beginners never write whole words; alphabet is Unit 0
+
+Complaint (3rd time): "guessing a letter or two is ok, not writing whole words in
+beginner lessons — and the alphabet learning isn't incorporated at all".
+
+- [x] `src/engine/production-stage.ts`: `letters` / `tiles` / `typing` from alphabet + units 1–2, never from replays
+- [x] `spellFromWord({ blanks })` + `SpellExercise` `shown` mask — "Complete the word" (≤ 2 blanks)
+- [x] `generateLessonExercises(course, lesson, crown, stage)`; letters = missing letters + chips only
+- [x] Practice (`review-exercise.ts`): typing only at typing stage AND known; multi-word → chips
+- [x] Alphabet screen: one drill per group + confusables, no text inputs; deep-link `/alphabet/:drillId`
+- [x] PathScreen: Unit 0 "The Cyrillic alphabet" (5 nodes) before "First words"; banner until done
+- [x] AI topic/scenario generators take `stage`; dialogue typing-stage only; keypad in Dialogue
+- [x] Tests: production-stage, exercise-gen ramp by stage, no-typing-early (all beginner lessons × crowns × Practice), AI generators
+- [x] Playwright walk (390×844): letters/tiles stages zero inputs; typing appears at typing stage crown 2 (u2s2l1)
+- [ ] deploy + verify live
+- [ ] memory + os/backlog
+
 # Phone round 3 (2026-08-14, same day)
 
 Victor re-tested after round 2: "still a lot of the audios doesn't work, I press

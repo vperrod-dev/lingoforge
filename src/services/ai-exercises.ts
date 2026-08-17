@@ -2,6 +2,8 @@ import { generateJSON } from './ollama'
 import { langName } from './lang-names'
 import { capText } from './ai-text'
 import type { ExerciseInstance } from '../engine/exercise-gen'
+import { blanksFor, spellFromWord } from '../engine/exercise-gen'
+import type { Stage } from '../engine/production-stage'
 import { sample } from '../engine/seeded-random'
 
 interface GeneratedVocab {
@@ -63,12 +65,19 @@ Rules:
   }))
 }
 
+/** Letters of every generated word — the distractor-tile source before typing. */
+export function lettersOf(words: string[]): string[] {
+  return [...new Set(words.flatMap((w) => [...w.toLowerCase()].filter((ch) => /\p{L}/u.test(ch))))]
+}
+
 export function topicVocabToExercises(
   vocabItems: GeneratedVocab[],
+  stage: Stage,
 ): ExerciseInstance[] {
   if (vocabItems.length === 0) return []
 
   const exercises: ExerciseInstance[] = []
+  const pool = lettersOf(vocabItems.map((v) => v.word))
 
   // Phase 1: Recognition (choice exercises — target → English)
   for (const v of vocabItems) {
@@ -103,15 +112,25 @@ export function topicVocabToExercises(
     })
   }
 
-  // Phase 3: Typing exercises for a few
+  // Phase 3: Production for a few — the same stage rule as the course lessons
   for (const v of sample(vocabItems, Math.min(4, vocabItems.length))) {
-    exercises.push({
-      kind: 'typing',
-      prompt: v.translation,
-      accept: [v.word, v.word.toLowerCase()],
-      answer: v.word,
-      vocabIds: [`topic:${v.word}`],
-    })
+    if (stage === 'typing') {
+      exercises.push({
+        kind: 'typing',
+        prompt: v.translation,
+        accept: [v.word, v.word.toLowerCase()],
+        answer: v.word,
+        vocabIds: [`topic:${v.word}`],
+      })
+    } else {
+      const wholeWord = stage === 'tiles' && !v.word.includes(' ') && v.word.length <= 9
+      exercises.push(
+        spellFromWord(v.word, v.translation, pool, {
+          vocabIds: [`topic:${v.word}`],
+          ...(wholeWord ? {} : { blanks: blanksFor(v.word) }),
+        }),
+      )
+    }
   }
 
   // Phase 4: Listening for a couple
@@ -138,12 +157,14 @@ export function topicVocabToExercises(
       (t) => t.toLowerCase().replace(/[¿¡?!.,;:'"«»—–-]/g, '') === wordLower,
     )
     if (blankIndex >= 0) {
+      const distractors = sample(vocabItems.filter((d) => d.word !== v.word), 3).map((d) => d.word)
       exercises.push({
         kind: 'cloze',
         tokens,
         blankIndex,
         translation: v.exampleTranslation,
         answer: tokens[blankIndex],
+        ...(stage === 'typing' ? {} : { options: sample([tokens[blankIndex], ...distractors], 4) }),
         vocabIds: [`topic:${v.word}`],
       })
     }

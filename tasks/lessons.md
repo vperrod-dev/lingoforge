@@ -41,3 +41,28 @@ Rules:
 - "Beginner-friendly" is about what the exercise *asks for*, not what help it
   offers. A keypad and a hint do not make free-typing a foreign script
   appropriate for someone on their first lesson.
+
+## 2026-08-17 (round 4) — "no text input" ≠ "no whole-word writing"
+Round 3 gated every `<input>` behind crown 2 and shipped a DOM test proving it.
+Victor came back a third time: he was still "writing whole Russian words". Three
+things the gate got wrong, all visible in one read of `exercise-gen.ts`:
+1. Full-word letter tiles for a 12-letter word *are* writing the word. The cap had
+   even been raised to 14 letters "so tiles could replace typing".
+2. The gate was a per-lesson replay counter. Replaying "First words" twice unlocked
+   dictation, typed cloze and free translation — on a lesson-1 learner.
+3. It was never swept: Practice fell through to `typing` for multi-word lemmas,
+   the Alphabet screen typed transliterations and dictated whole words, the AI
+   lessons typed, `dialogue` typed with no keypad. The test covered lesson 1 at
+   crown 0 only.
+Also: the alphabet lived on a tab, off the path, consulted by nothing.
+
+Rules:
+- Read the complaint literally: "not writing whole words" means *no exercise whose
+  answer is the whole word*, whatever the input widget. Tiles ≠ fix.
+- A difficulty gate is a **learner stage** (what they have learned: alphabet, units),
+  never a replay counter on the thing being gated.
+- One helper (`production-stage.ts`), one signature, every generator takes it.
+  Grep for the exercise kinds (`kind: 'typing'`, missing cloze `options`) across
+  `src/` before calling a gate done.
+- Tests must span the whole beginner range (all beginner lessons × all crown levels ×
+  Practice × other screens), not the reported case.

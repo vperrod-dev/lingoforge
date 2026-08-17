@@ -57,6 +57,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<PathScreen />} />
             <Route path="/alphabet" element={<AlphabetScreen />} />
+            <Route path="/alphabet/:drillId" element={<AlphabetScreen />} />
             <Route path="/review" element={<ReviewScreen />} />
             <Route path="/flashcards" element={<FlashcardsScreen />} />
             <Route path="/stats" element={<StatsScreen />} />

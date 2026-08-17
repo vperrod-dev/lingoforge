@@ -12,6 +12,8 @@ import {
 import { LessonPlayer, type LessonResult } from '../exercises/LessonPlayer'
 import { renderExercise } from '../exercises/render'
 import { useProgress } from '../state/progress'
+import { courses } from '../content'
+import { courseStage } from '../engine/production-stage'
 import { Confetti } from '../ui/Confetti'
 import { ClayButton } from '../ui/ClayButton'
 import { playFanfare } from '../audio/sfx'
@@ -45,6 +47,7 @@ export function ScenarioLessonScreen() {
   const navigate = useNavigate()
   const { addXp, addStudyMinutes, reviewVocab } = useProgress()
   const progressData = useProgress((s) => s.data)
+  const stage = courseStage(courses[progressData.activeCourse], progressData.courses[progressData.activeCourse]?.lessonCompletions ?? {})
   const [result, setResult] = useState<LessonResult | null>(null)
 
   const stored: StoredScenario | null = useMemo(() => {
@@ -59,8 +62,8 @@ export function ScenarioLessonScreen() {
   }, [])
 
   const exercises = useMemo(
-    () => stored ? scenarioToExercises(stored.data, stored.ttsLang) : [],
-    [stored],
+    () => stored ? scenarioToExercises(stored.data, stored.ttsLang, stage) : [],
+    [stored, stage],
   )
 
   if (!stored || exercises.length === 0) {

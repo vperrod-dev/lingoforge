@@ -86,7 +86,7 @@ describe('scenarioToExercises', () => {
         { speaker: 'other', line: 'Claro que sí', translation: 'Of course' },
       ],
     }
-    const indexes = scenarioToExercises(scenario, 'es-ES')
+    const indexes = scenarioToExercises(scenario, 'es-ES', 'typing')
       .filter((e) => e.kind === 'choice' || e.kind === 'listening')
       .map((e) => (e as WithCorrect).correctIndex)
     expect(indexes).not.toContain(-1)
@@ -100,7 +100,7 @@ describe('scenarioToExercises', () => {
       phrases: [],
       dialogue: [{ speaker: 'you', line: 'Un café por favor', translation: 'A coffee please' }],
     }
-    const cloze = scenarioToExercises(scenario, 'es-ES').find((e): e is Cloze => e.kind === 'cloze')
+    const cloze = scenarioToExercises(scenario, 'es-ES', 'typing').find((e): e is Cloze => e.kind === 'cloze')
     expect(cloze?.tokens).toContain(cloze?.answer)
   })
 
@@ -112,7 +112,39 @@ describe('scenarioToExercises', () => {
       phrases: [],
       dialogue: [{ speaker: 'you', line: 'Hola', translation: 'Hello' }],
     }
-    const clozes = scenarioToExercises(scenario, 'es-ES').filter((e) => e.kind === 'cloze')
+    const clozes = scenarioToExercises(scenario, 'es-ES', 'typing').filter((e) => e.kind === 'cloze')
     expect(clozes).toEqual([])
+  })
+
+  it('never emits typing, typed cloze or dialogue before the typing stage', () => {
+    const scenario: ScenarioData = {
+      title: 't',
+      culturalTip: '',
+      vocab: [
+        { word: 'café', translation: 'coffee', pronunciation: '' },
+        { word: 'agua', translation: 'water', pronunciation: '' },
+        { word: 'pan', translation: 'bread', pronunciation: '' },
+        { word: 'leche', translation: 'milk', pronunciation: '' },
+      ],
+      phrases: [
+        { phrase: 'Un café por favor', translation: 'A coffee please', usage: '' },
+        { phrase: 'La cuenta por favor', translation: 'The bill please', usage: '' },
+        { phrase: 'Buenos días', translation: 'Good morning', usage: '' },
+        { phrase: 'Gracias', translation: 'Thanks', usage: '' },
+      ],
+      dialogue: [
+        { speaker: 'other', line: 'Hola, ¿qué desea?', translation: 'Hi, what would you like?' },
+        { speaker: 'you', line: 'Un café por favor', translation: 'A coffee please' },
+        { speaker: 'other', line: 'Claro que sí', translation: 'Of course' },
+        { speaker: 'you', line: 'Gracias', translation: 'Thanks' },
+      ],
+    }
+    for (const stage of ['letters', 'tiles'] as const) {
+      for (let i = 0; i < 10; i++) {
+        const ex = scenarioToExercises(scenario, 'es-ES', stage)
+        expect(ex.some((e) => e.kind === 'typing' || e.kind === 'dialogue')).toBe(false)
+        expect(ex.filter((e) => e.kind === 'cloze').every((e) => (e.options?.length ?? 0) > 1)).toBe(true)
+      }
+    }
   })
 })

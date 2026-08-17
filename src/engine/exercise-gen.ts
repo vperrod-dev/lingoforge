@@ -1,10 +1,13 @@
 import type { Course, Lesson, VocabItem } from '../content/types'
 import { isSpeechSupported } from '../audio/stt'
 import { sample, shuffle } from './seeded-random'
+import type { Stage } from './production-stage'
 
 export type ExerciseInstance =
   | {
       kind: 'choice'
+      /** Heading; defaults to "What does this mean?" / "Pick the translation" */
+      title?: string
       /** What the user sees as the question */
       prompt: string
       /** Spoken text (target language) if prompt is in target language */
@@ -53,6 +56,11 @@ export type ExerciseInstance =
       tiles: string[]
       /** If set, the word is played aloud — makes this a listening activity too */
       ttsText?: string
+      /**
+       * Missing-letter mode: the word with `null` where a letter is blank. Only the
+       * blanks come from `tiles`; a beginner completes the word instead of writing it.
+       */
+      shown?: (string | null)[]
       vocabIds: string[]
     }
   | {
@@ -286,10 +294,15 @@ export function spellFromWord(
   word: string,
   prompt: string,
   pool: string[],
-  opts: { audio?: boolean; vocabIds?: string[] } = {},
+  opts: { audio?: boolean; vocabIds?: string[]; blanks?: number } = {},
 ): ExerciseInstance {
   const answer = word.toLowerCase()
-  const letters = [...answer].filter((ch) => /\p{L}/u.test(ch))
+  const chars = [...answer]
+  const letterIdx = chars.map((_, i) => i).filter((i) => /\p{L}/u.test(chars[i]))
+  // Missing-letter mode: blank a few letters, show the rest — the learner completes
+  // the word rather than producing it. Never blank every letter of the word.
+  const blankIdx = opts.blanks && opts.blanks < letterIdx.length ? sample(letterIdx, opts.blanks) : null
+  const letters = (blankIdx ?? letterIdx).map((i) => chars[i])
   const distractors = sample(pool.filter((ch) => !letters.includes(ch)), Math.min(3, pool.length))
   return {
     kind: 'spell',
@@ -297,13 +310,19 @@ export function spellFromWord(
     answer,
     tiles: shuffle([...letters, ...distractors]),
     ...(opts.audio ? { ttsText: answer } : {}),
+    ...(blankIdx ? { shown: chars.map((ch, i) => (blankIdx.includes(i) ? null : ch)) } : {}),
     vocabIds: opts.vocabIds ?? [],
   }
 }
 
-function spellExercise(vocab: VocabItem, pool: string[], audio = false): ExerciseInstance {
-  return spellFromWord(vocab.lemma, audio ? 'Spell what you hear' : vocab.translation, pool, {
-    audio,
+/** Blanks for a missing-letter drill: one for a short word, two otherwise. */
+export function blanksFor(word: string): number {
+  return word.length <= 5 ? 1 : 2
+}
+
+function spellExercise(vocab: VocabItem, pool: string[], opts: { audio?: boolean; blanks?: number } = {}): ExerciseInstance {
+  return spellFromWord(vocab.lemma, opts.audio && !opts.blanks ? 'Spell what you hear' : vocab.translation, pool, {
+    ...opts,
     vocabIds: [vocab.id],
   })
 }
@@ -470,7 +489,12 @@ function capByKind(exercises: ExerciseInstance[], total: number, ordered = false
   )
 }
 
-export function generateLessonExercises(course: Course, lesson: Lesson, crownLevel: number): ExerciseInstance[] {
+export function generateLessonExercises(
+  course: Course,
+  lesson: Lesson,
+  crownLevel: number,
+  stage: Stage,
+): ExerciseInstance[] {
   const byId = vocabById(course)
   const vocab = lesson.vocabIds
     .map((id) => byId.get(id))
@@ -480,19 +504,23 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
   const spellable = vocab.filter((v) => isSpellable(v))
   const exercises: ExerciseInstance[] = []
 
-  // A beginner has no business free-typing a foreign script: until the third pass
-  // through a lesson, production means assembling letter tiles and word chips.
-  // Typing arrives only once the words are already familiar.
-  const typingAllowed = crownLevel >= 2
+  // What "produce the word" means is decided by the learner's stage (see
+  // production-stage.ts), never by how often this one lesson was replayed:
+  // letters = complete a shown word; tiles = build it; typing = write it.
+  const typingAllowed = stage === 'typing'
 
   // New vocab intro: one recognition per word teaches meaning (capped later)
   for (const v of vocab) {
     exercises.push(choiceToEnglish(course, v))
   }
   // Production: tiles for anything that fits, typing only once it's allowed
-  const productionSet = crownLevel >= 2 ? vocab : sample(vocab, Math.ceil(vocab.length / 2))
+  const productionSet = typingAllowed ? vocab : sample(vocab, Math.ceil(vocab.length / 2))
   for (const v of productionSet) {
-    if (crownLevel < 3 && isSpellable(v, typingAllowed ? 9 : 14)) exercises.push(spellExercise(v, pool))
+    const singleWord = !v.lemma.includes(' ')
+    if (stage === 'letters' && singleWord) exercises.push(spellExercise(v, pool, { blanks: blanksFor(v.lemma) }))
+    else if (stage === 'tiles' && isSpellable(v)) exercises.push(spellExercise(v, pool))
+    else if (stage === 'tiles' && singleWord) exercises.push(spellExercise(v, pool, { blanks: blanksFor(v.lemma) }))
+    else if (typingAllowed && crownLevel < 3 && isSpellable(v)) exercises.push(spellExercise(v, pool))
     else if (typingAllowed) exercises.push(typingExercise(v))
     // A multi-word lemma with no keyboard yet: build it from word chips.
     else exercises.push(wordBankExercise(course, { text: v.lemma, translation: v.translation, vocabIds: [v.id] }))
@@ -501,8 +529,10 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
   for (const v of sample(vocab, Math.min(1, vocab.length))) {
     exercises.push(listeningExercise(course, v))
   }
+  // Spelling a word from sound alone needs the alphabet first; before that the
+  // word is shown and the learner fills in the letters they hear.
   for (const v of sample(spellable, Math.min(2, spellable.length))) {
-    exercises.push(spellExercise(v, pool, true))
+    exercises.push(spellExercise(v, pool, { audio: true, ...(stage === 'letters' ? { blanks: blanksFor(v.lemma) } : {}) }))
   }
   // Dictation is typing a whole sentence in a new script from sound alone — the
   // hardest thing in the lesson, so it waits for the typing stage.
@@ -575,5 +605,7 @@ export function generateLessonExercises(course: Course, lesson: Lesson, crownLev
     })
   }
 
-  return capByKind(exercises, 14, crownLevel === 0)
+  // Recognition before production on the first pass, and on every pass while the
+  // learner is still meeting the alphabet.
+  return capByKind(exercises, 14, crownLevel === 0 || stage === 'letters')
 }

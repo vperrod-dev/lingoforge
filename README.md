@@ -11,7 +11,7 @@ Fun, Duolingo-style web app for learning **Russian** and **Spanish** from Englis
 
 ## Features
 
-- 15 exercise types: multiple choice, word bank, listening, spell-from-tiles, typing with tolerant checking (ё/е, Spanish accents), dictation, free translation, fill-in-the-blank, matching pairs, error correction, sentence reordering, pattern substitution, dialogue, phrase ordering, speak-back
+- 15 exercise types: multiple choice, word bank, listening, spell-from-tiles (missing letters for beginners), typing with tolerant checking (ё/е, Spanish accents; typing stage only), dictation, free translation, fill-in-the-blank, matching pairs, error correction, sentence reordering, pattern substitution, dialogue, phrase ordering, speak-back
 - Multiple local profiles (Netflix-style picker), each with its own courses and progress
 - Stats: weekly minutes chart, 4-week streak heatmap, badges, JSON backup
 - Installable PWA, mobile-first, claymorphism design, reduced-motion support
@@ -35,11 +35,13 @@ The two things that make a phone harder than a laptop are handled explicitly:
   device still makes no sound — no Russian voice installed, silent switch on —
   tapping the speaker reveals the text instead of leaving you stuck on an
   exercise you cannot hear.
-- **Order, and no keyboard until you're ready.** A first pass through a lesson is
-  sequenced, not shuffled: you meet a word, then recognise it, then build it from
-  letter tiles and word chips. Nothing asks you to type the script from a blank
-  field until the third pass through that lesson (and in Practice, not until the
-  word is mature) — production early on is assembling, not typing.
+- **Order, and no keyboard until you're ready.** Russian starts with Unit 0, the
+  Cyrillic alphabet, right on the path. Until it's done, no exercise asks for a
+  whole word: you meet a word, recognise it, complete one or two missing letters,
+  build sentences from word chips. After the alphabet, whole words from letter
+  tiles. Typing arrives only once units 1–2 are behind you and a lesson is on its
+  third pass (and in Practice, only for words you already know) — the same rule
+  everywhere, including the AI lessons.
 
 ## Run
 

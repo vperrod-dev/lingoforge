@@ -20,6 +20,20 @@ describe('spellFromWord', () => {
     for (const ch of 'чай') expect(ex.tiles).toContain(ch)
   })
 
+  it('blanks only the requested letters and shows the rest', () => {
+    const ex = spellFromWord('спасибо', 'thank you', letterPool(ru), { blanks: 2 })
+    if (ex.kind !== 'spell') throw new Error('not spell')
+    expect(ex.shown?.filter((ch) => ch === null).length).toBe(2)
+    expect(ex.shown?.filter((ch) => ch !== null).join('').length).toBe(5)
+    expect(ex.tiles.length).toBe(5) // 2 blanks + 3 distractors
+  })
+
+  it('never blanks every letter of a word', () => {
+    const ex = spellFromWord('да', 'yes', letterPool(ru), { blanks: 2 })
+    if (ex.kind !== 'spell') throw new Error('not spell')
+    expect(ex.shown).toBeUndefined()
+  })
+
   it('marks audio variants with ttsText', () => {
     const ex = spellFromWord('чай', 'tea', letterPool(ru), { audio: true })
     expect(ex.kind === 'spell' && ex.ttsText).toBe('чай')
@@ -113,7 +127,7 @@ describe('generateLessonExercises balance', () => {
   it('never lets multiple-choice dominate (≤ 4 of ≤ 14)', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 25; i++) {
-      const ex = generateLessonExercises(ru, lesson, 0)
+      const ex = generateLessonExercises(ru, lesson, 0, 'letters')
       expect(ex.length).toBeLessThanOrEqual(14)
       expect(ex.filter((e) => e.kind === 'choice').length).toBeLessThanOrEqual(4)
       expect(ex.filter((e) => e.kind === 'listening').length).toBeLessThanOrEqual(2)
@@ -124,7 +138,7 @@ describe('generateLessonExercises balance', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     const kinds = new Set<string>()
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 0)) kinds.add(e.kind)
+      for (const e of generateLessonExercises(ru, lesson, 0, 'tiles')) kinds.add(e.kind)
     }
     expect(kinds.has('spell')).toBe(true)
   })
@@ -133,7 +147,7 @@ describe('generateLessonExercises balance', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     const kinds = new Set<string>()
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 0)) kinds.add(e.kind)
+      for (const e of generateLessonExercises(ru, lesson, 0, 'letters')) kinds.add(e.kind)
     }
     // production + listening variety beyond multiple-choice
     expect(kinds.has('spell')).toBe(true)
@@ -142,22 +156,36 @@ describe('generateLessonExercises balance', () => {
 })
 
 describe('difficulty ramp', () => {
-  // A learner who has just met the Cyrillic alphabet cannot produce it from a
-  // blank field. Everything with a text input waits for crown 2.
+  // What a lesson asks the learner to produce follows their stage (production-stage.ts):
+  // letters = complete a shown word, tiles = build it, typing = write it. Replaying a
+  // lesson never unlocks more than the stage allows.
   const KEYBOARD_KINDS = ['typing', 'translate', 'dictation']
 
-  it('gives a first-time learner no exercise with a text input', () => {
+  it('gives a learner still on the alphabet no text input, however often they replay', () => {
     if (!lesson) throw new Error('fixture lesson missing')
-    for (let i = 0; i < 30; i++) {
-      const kinds = generateLessonExercises(ru, lesson, 0).map((e) => e.kind)
-      expect(kinds.filter((k) => KEYBOARD_KINDS.includes(k))).toEqual([])
+    for (const crown of [0, 1, 2, 3, 5]) {
+      for (let i = 0; i < 20; i++) {
+        const kinds = generateLessonExercises(ru, lesson, crown, 'letters').map((e) => e.kind)
+        expect(kinds.filter((k) => KEYBOARD_KINDS.includes(k))).toEqual([])
+      }
     }
   })
 
-  it('still gives no text input on the second pass', () => {
+  it('never asks a learner on the alphabet for a whole word: every spell shows letters, blanks ≤ 2', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 30; i++) {
-      const kinds = generateLessonExercises(ru, lesson, 1).map((e) => e.kind)
+      for (const e of generateLessonExercises(ru, lesson, 0, 'letters')) {
+        if (e.kind !== 'spell') continue
+        expect(e.shown?.some((ch) => ch !== null)).toBe(true)
+        expect(e.shown?.filter((ch) => ch === null).length).toBeLessThanOrEqual(2)
+      }
+    }
+  })
+
+  it('gives no text input at the tiles stage either', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    for (let i = 0; i < 30; i++) {
+      const kinds = generateLessonExercises(ru, lesson, 5, 'tiles').map((e) => e.kind)
       expect(kinds.filter((k) => KEYBOARD_KINDS.includes(k))).toEqual([])
     }
   })
@@ -165,7 +193,7 @@ describe('difficulty ramp', () => {
   it('lets a first-time learner pick the missing word instead of spelling it', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 0)) {
+      for (const e of generateLessonExercises(ru, lesson, 0, 'letters')) {
         if (e.kind === 'cloze') expect(e.options?.length).toBeGreaterThan(1)
       }
     }
@@ -174,17 +202,17 @@ describe('difficulty ramp', () => {
   it('drops the cloze chips once the learner is typing', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 2)) {
+      for (const e of generateLessonExercises(ru, lesson, 2, 'typing')) {
         if (e.kind === 'cloze') expect(e.options).toBeUndefined()
       }
     }
   })
 
-  it('brings sentence typing in once the words are familiar', () => {
+  it('brings sentence typing in at the typing stage', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     const kinds = new Set<string>()
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 2)) kinds.add(e.kind)
+      for (const e of generateLessonExercises(ru, lesson, 2, 'typing')) kinds.add(e.kind)
     }
     expect(kinds.has('translate') && kinds.has('dictation')).toBe(true)
   })
@@ -193,7 +221,7 @@ describe('difficulty ramp', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     const kinds = new Set<string>()
     for (let i = 0; i < 30; i++) {
-      for (const e of generateLessonExercises(ru, lesson, 3)) kinds.add(e.kind)
+      for (const e of generateLessonExercises(ru, lesson, 3, 'typing')) kinds.add(e.kind)
     }
     expect(kinds.has('typing')).toBe(true)
   })
@@ -201,7 +229,7 @@ describe('difficulty ramp', () => {
   it('shows a first-time learner every recognition exercise before any production one', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 30; i++) {
-      const kinds = generateLessonExercises(ru, lesson, 0).map((e) => e.kind)
+      const kinds = generateLessonExercises(ru, lesson, 0, 'letters').map((e) => e.kind)
       const lastChoice = kinds.lastIndexOf('choice')
       const firstProduction = kinds.findIndex((k) => k === 'spell' || k === 'cloze' || k === 'wordBank')
       if (lastChoice === -1 || firstProduction === -1) continue

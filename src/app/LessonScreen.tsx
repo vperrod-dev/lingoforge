@@ -6,6 +6,7 @@ import { Lightbulb } from 'lucide-react'
 import { courses, getLesson, grammarNote } from '../content'
 import type { CourseId } from '../content/types'
 import { generateLessonExercises } from '../engine/exercise-gen'
+import { lessonStage } from '../engine/production-stage'
 import { LessonPlayer, type LessonResult } from '../exercises/LessonPlayer'
 import { renderExercise } from '../exercises/render'
 import { useProgress } from '../state/progress'
@@ -24,11 +25,12 @@ export function LessonScreen() {
 
   const course = courseId ? courses[courseId] : undefined
   const lesson = course && lessonId ? getLesson(course, lessonId) : undefined
-  const crowns = course && lessonId ? (data.courses[course.id]?.lessonCompletions[lessonId] ?? 0) : 0
+  const completions = course ? (data.courses[course.id]?.lessonCompletions ?? {}) : {}
+  const crowns = lessonId ? (completions[lessonId] ?? 0) : 0
   const note = courseId && lessonId ? grammarNote(courseId, lessonId) : undefined
 
   const exercises = useMemo(
-    () => (course && lesson ? generateLessonExercises(course, lesson, crowns) : []),
+    () => (course && lesson ? generateLessonExercises(course, lesson, crowns, lessonStage(course, completions, crowns)) : []),
     // regenerate only per lesson visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [course?.id, lesson?.id],
