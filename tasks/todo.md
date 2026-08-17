@@ -12,8 +12,8 @@ beginner lessons — and the alphabet learning isn't incorporated at all".
 - [x] AI topic/scenario generators take `stage`; dialogue typing-stage only; keypad in Dialogue
 - [x] Tests: production-stage, exercise-gen ramp by stage, no-typing-early (all beginner lessons × crowns × Practice), AI generators
 - [x] Playwright walk (390×844): letters/tiles stages zero inputs; typing appears at typing stage crown 2 (u2s2l1)
-- [ ] deploy + verify live
-- [ ] memory + os/backlog
+- [x] deploy + verify live (https://lingoforge.pages.dev, walk: 240 beginner exercises / 0 inputs)
+- [x] memory + os/backlog
 
 # Phone round 3 (2026-08-14, same day)
 
