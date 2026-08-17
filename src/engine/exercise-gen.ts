@@ -250,15 +250,32 @@ function translateExercise(sentence: { text: string; translation: string; vocabI
   }
 }
 
-/** Unique letters used across a course's vocab — the distractor-tile source for spelling. */
+/** Unique letters used across a course's vocab — the distractor-tile source for spelling.
+ * Cached per course object: course.vocab doesn't change at runtime, so rescanning it on
+ * every call (this runs once per lesson generation) is wasted work. */
+const letterPoolCache = new WeakMap<Course, string[]>()
 export function letterPool(course: Course): string[] {
+  const cached = letterPoolCache.get(course)
+  if (cached) return cached
   const set = new Set<string>()
   for (const v of course.vocab) {
     for (const ch of v.lemma.toLowerCase()) {
       if (/\p{L}/u.test(ch)) set.add(ch)
     }
   }
-  return [...set]
+  const pool = [...set]
+  letterPoolCache.set(course, pool)
+  return pool
+}
+
+/** id -> vocab lookup, built once per course instead of `course.vocab.find(...)` on every id. */
+const vocabByIdCache = new WeakMap<Course, Map<string, VocabItem>>()
+function vocabById(course: Course): Map<string, VocabItem> {
+  const cached = vocabByIdCache.get(course)
+  if (cached) return cached
+  const map = new Map(course.vocab.map((v) => [v.id, v]))
+  vocabByIdCache.set(course, map)
+  return map
 }
 
 /**
@@ -454,8 +471,9 @@ function capByKind(exercises: ExerciseInstance[], total: number, ordered = false
 }
 
 export function generateLessonExercises(course: Course, lesson: Lesson, crownLevel: number): ExerciseInstance[] {
+  const byId = vocabById(course)
   const vocab = lesson.vocabIds
-    .map((id) => course.vocab.find((v) => v.id === id))
+    .map((id) => byId.get(id))
     .filter((v): v is VocabItem => Boolean(v))
 
   const pool = letterPool(course)
