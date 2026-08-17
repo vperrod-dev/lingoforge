@@ -66,3 +66,10 @@ Rules:
   `src/` before calling a gate done.
 - Tests must span the whole beginner range (all beginner lessons × all crown levels ×
   Practice × other screens), not the reported case.
+
+## 2026-08-17 (round 4b) — "incorporate the alphabet" meant inside the lessons
+Round 4 built a separate Unit 0 of alphabet drills in front of lesson 1. Victor:
+"No, I want the alphabet learning to be embedded into the normal lessons — step by
+step." Rule: when the ask is "incorporate X into Y", weave X through Y (a few
+letters per lesson, from that lesson's own words) — a prerequisite block in front
+of Y is the opposite of incorporating.

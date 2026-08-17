@@ -1,7 +1,7 @@
 import type { Course, Lesson, VocabItem } from '../content/types'
 import { isSpeechSupported } from '../audio/stt'
 import { sample, shuffle } from './seeded-random'
-import type { Stage } from './production-stage'
+import { letterInfo, lettersUpTo, newLetters, type Stage } from './production-stage'
 
 export type ExerciseInstance =
   | {
@@ -294,14 +294,17 @@ export function spellFromWord(
   word: string,
   prompt: string,
   pool: string[],
-  opts: { audio?: boolean; vocabIds?: string[]; blanks?: number } = {},
+  opts: { audio?: boolean; vocabIds?: string[]; blanks?: number; blankFrom?: Set<string> } = {},
 ): ExerciseInstance {
   const answer = word.toLowerCase()
   const chars = [...answer]
   const letterIdx = chars.map((_, i) => i).filter((i) => /\p{L}/u.test(chars[i]))
   // Missing-letter mode: blank a few letters, show the rest — the learner completes
-  // the word rather than producing it. Never blank every letter of the word.
-  const blankIdx = opts.blanks && opts.blanks < letterIdx.length ? sample(letterIdx, opts.blanks) : null
+  // the word rather than producing it. Never blank every letter of the word. When
+  // `blankFrom` is given (letters already taught), blanks come from those first.
+  const preferred = opts.blankFrom ? letterIdx.filter((i) => opts.blankFrom!.has(chars[i])) : []
+  const blankPool = preferred.length >= (opts.blanks ?? 0) ? preferred : letterIdx
+  const blankIdx = opts.blanks && opts.blanks < letterIdx.length ? sample(blankPool, opts.blanks) : null
   const letters = (blankIdx ?? letterIdx).map((i) => chars[i])
   const distractors = sample(pool.filter((ch) => !letters.includes(ch)), Math.min(3, pool.length))
   return {
@@ -320,7 +323,11 @@ export function blanksFor(word: string): number {
   return word.length <= 5 ? 1 : 2
 }
 
-function spellExercise(vocab: VocabItem, pool: string[], opts: { audio?: boolean; blanks?: number } = {}): ExerciseInstance {
+function spellExercise(
+  vocab: VocabItem,
+  pool: string[],
+  opts: { audio?: boolean; blanks?: number; blankFrom?: Set<string> } = {},
+): ExerciseInstance {
   return spellFromWord(vocab.lemma, opts.audio && !opts.blanks ? 'Spell what you hear' : vocab.translation, pool, {
     ...opts,
     vocabIds: [vocab.id],
@@ -439,6 +446,46 @@ export function reorderDictationExercise(
 }
 
 /**
+ * Meet the letters a lesson introduces: letter → sound (with its example word), and
+ * sound → letter among letters already met.
+ */
+export function letterExercises(course: Course, lesson: Lesson): ExerciseInstance[] {
+  const fresh = newLetters(course, lesson)
+  const known = [...lettersUpTo(course, lesson)]
+  const exercises: ExerciseInstance[] = []
+  for (const ch of fresh) {
+    const info = letterInfo(ch)
+    if (!info) continue
+    const otherSounds = sample(known.filter((k) => k !== ch).map((k) => letterInfo(k)?.sound).filter((x): x is string => Boolean(x)), 3)
+    const soundOptions = shuffle([info.sound, ...otherSounds])
+    exercises.push({
+      kind: 'choice',
+      title: 'New letter',
+      prompt: `${info.letter} ${info.lower} — as in ${info.example.word} (${info.example.translation}). What does it sound like?`,
+      ttsText: info.lower,
+      options: soundOptions,
+      correctIndex: soundOptions.indexOf(info.sound),
+      vocabIds: [],
+    })
+  }
+  for (const ch of sample(fresh, Math.ceil(fresh.length / 2))) {
+    const info = letterInfo(ch)
+    if (!info) continue
+    const others = sample(known.filter((k) => k !== ch), 3).map((k) => letterInfo(k)).filter((x): x is NonNullable<typeof x> => Boolean(x))
+    const options = shuffle([info, ...others].map((l) => `${l.letter} ${l.lower}`))
+    exercises.push({
+      kind: 'choice',
+      title: 'Letters',
+      prompt: `Which letter sounds like "${info.sound}"?`,
+      options,
+      correctIndex: options.indexOf(`${info.letter} ${info.lower}`),
+      vocabIds: [],
+    })
+  }
+  return exercises
+}
+
+/**
  * Teaching order for a first pass: meet the word, then recognise it, then build
  * it from pieces, and only then produce it from nothing. Shuffling everything
  * meant a beginner's very first exercise could be "type this in Cyrillic" for a
@@ -503,6 +550,9 @@ export function generateLessonExercises(
   const pool = letterPool(course)
   const spellable = vocab.filter((v) => isSpellable(v))
   const exercises: ExerciseInstance[] = []
+  // Missing letters are drawn from letters already met, so a blank is always a guess
+  // the learner can make.
+  const blankFrom = stage === 'letters' ? lettersUpTo(course, lesson) : undefined
 
   // What "produce the word" means is decided by the learner's stage (see
   // production-stage.ts), never by how often this one lesson was replayed:
@@ -517,7 +567,7 @@ export function generateLessonExercises(
   const productionSet = typingAllowed ? vocab : sample(vocab, Math.ceil(vocab.length / 2))
   for (const v of productionSet) {
     const singleWord = !v.lemma.includes(' ')
-    if (stage === 'letters' && singleWord) exercises.push(spellExercise(v, pool, { blanks: blanksFor(v.lemma) }))
+    if (stage === 'letters' && singleWord) exercises.push(spellExercise(v, pool, { blanks: blanksFor(v.lemma), blankFrom }))
     else if (stage === 'tiles' && isSpellable(v)) exercises.push(spellExercise(v, pool))
     else if (stage === 'tiles' && singleWord) exercises.push(spellExercise(v, pool, { blanks: blanksFor(v.lemma) }))
     else if (typingAllowed && crownLevel < 3 && isSpellable(v)) exercises.push(spellExercise(v, pool))
@@ -532,7 +582,7 @@ export function generateLessonExercises(
   // Spelling a word from sound alone needs the alphabet first; before that the
   // word is shown and the learner fills in the letters they hear.
   for (const v of sample(spellable, Math.min(2, spellable.length))) {
-    exercises.push(spellExercise(v, pool, { audio: true, ...(stage === 'letters' ? { blanks: blanksFor(v.lemma) } : {}) }))
+    exercises.push(spellExercise(v, pool, { audio: true, ...(stage === 'letters' ? { blanks: blanksFor(v.lemma), blankFrom } : {}) }))
   }
   // Dictation is typing a whole sentence in a new script from sound alone — the
   // hardest thing in the lesson, so it waits for the typing stage.
@@ -606,6 +656,10 @@ export function generateLessonExercises(
   }
 
   // Recognition before production on the first pass, and on every pass while the
-  // learner is still meeting the alphabet.
-  return capByKind(exercises, 14, crownLevel === 0 || stage === 'letters')
+  // learner is still meeting the alphabet — where the lesson opens with its new letters.
+  // A lesson that brings new letters opens with them, at any stage (rare letters
+  // like ё or щ first show up well past the beginner units).
+  const intro = crownLevel === 0 || stage === 'letters' ? letterExercises(course, lesson) : []
+  if (stage === 'letters') return [...intro, ...capByKind(exercises, 12, true)]
+  return [...intro, ...capByKind(exercises, 14, crownLevel === 0)]
 }

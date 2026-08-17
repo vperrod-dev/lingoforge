@@ -245,7 +245,7 @@ export function AlphabetScreen() {
       addXp(r.xp)
       addStudyMinutes(r.minutes)
       const fresh = useProgress.getState().data.courses.ru?.lessonCompletions ?? {}
-      if (alphabetDone('ru', fresh)) earnBadge('alphabet-master')
+      if (alphabetDone(courses.ru, fresh)) earnBadge('alphabet-master')
       playFanfare()
       setDone(true)
     }
@@ -282,8 +282,8 @@ export function AlphabetScreen() {
       <header>
         <h1 className="font-display text-3xl font-bold">{courses.ru.flag} Cyrillic alphabet</h1>
         <p className="text-fg-muted">
-          33 letters in 4 smart groups — Unit 0 of your path. Tap any letter to hear it.
-          Russian is phonetic: once you can read, every lesson opens up.
+          33 letters in 4 smart groups. Your lessons teach them a few at a time — this tab is
+          for extra practice. Tap any letter to hear it.
         </p>
       </header>
 

@@ -36,6 +36,9 @@ function renderLesson() {
       </Routes>
     </MemoryRouter>,
   )
+  // a first pass opens with the lesson's new letters
+  const start = screen.queryByText('Start lesson')
+  if (start) fireEvent.click(start)
 }
 
 function finishLesson() {

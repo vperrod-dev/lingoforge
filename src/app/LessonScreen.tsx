@@ -6,7 +6,8 @@ import { Lightbulb } from 'lucide-react'
 import { courses, getLesson, grammarNote } from '../content'
 import type { CourseId } from '../content/types'
 import { generateLessonExercises } from '../engine/exercise-gen'
-import { lessonStage } from '../engine/production-stage'
+import { lessonStage, letterInfo, newLetters } from '../engine/production-stage'
+import { SpeakerButton } from '../ui/SpeakerButton'
 import { LessonPlayer, type LessonResult } from '../exercises/LessonPlayer'
 import { renderExercise } from '../exercises/render'
 import { useProgress } from '../state/progress'
@@ -28,9 +29,14 @@ export function LessonScreen() {
   const completions = course ? (data.courses[course.id]?.lessonCompletions ?? {}) : {}
   const crowns = lessonId ? (completions[lessonId] ?? 0) : 0
   const note = courseId && lessonId ? grammarNote(courseId, lessonId) : undefined
+  const stage = course ? lessonStage(course, completions, crowns) : 'tiles'
+  // Letters this lesson introduces — shown before the first pass through it
+  const letters = course && lesson && crowns === 0
+    ? newLetters(course, lesson).map((ch) => letterInfo(ch)).filter((l) => l !== undefined)
+    : []
 
   const exercises = useMemo(
-    () => (course && lesson ? generateLessonExercises(course, lesson, crowns, lessonStage(course, completions, crowns)) : []),
+    () => (course && lesson ? generateLessonExercises(course, lesson, crowns, stage) : []),
     // regenerate only per lesson visit
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [course?.id, lesson?.id],
@@ -93,15 +99,31 @@ export function LessonScreen() {
     )
   }
 
-  if (note && !started) {
+  if ((note || letters.length > 0) && !started) {
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center gap-6 p-6">
+        {letters.length > 0 && (
+          <div className="clay flex flex-col gap-3 border-ru bg-red-50 p-6">
+            <h1 className="font-display text-xl font-bold">New letters in this lesson</h1>
+            <ul className="flex flex-col gap-2">
+              {letters.map((l) => (
+                <li key={l.letter} className="flex items-center gap-3">
+                  <SpeakerButton text={l.lower} lang={course.ttsLang} label={`Play letter ${l.letter}`} />
+                  <span className="w-14 shrink-0 whitespace-nowrap font-display text-2xl font-bold">{l.letter} {l.lower}</span>
+                  <span className="text-fg-muted">{l.sound} — {l.example.word} ({l.example.translation})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {note && (
         <div className="clay flex flex-col gap-3 border-gold bg-amber-50 p-6">
           <h1 className="flex items-center gap-2 font-display text-xl font-bold">
             <Lightbulb className="size-6 text-gold" aria-hidden /> {lesson.title}
           </h1>
           <p className="text-lg leading-relaxed">{note}</p>
         </div>
+        )}
         <ClayButton variant="primary" className="min-w-48 self-center" onClick={() => setStarted(true)}>
           Start lesson
         </ClayButton>

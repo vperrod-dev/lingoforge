@@ -127,7 +127,8 @@ describe('generateLessonExercises balance', () => {
   it('never lets multiple-choice dominate (≤ 4 of ≤ 14)', () => {
     if (!lesson) throw new Error('fixture lesson missing')
     for (let i = 0; i < 25; i++) {
-      const ex = generateLessonExercises(ru, lesson, 0, 'letters')
+      // second pass: no letter intro in front of the lesson body
+      const ex = generateLessonExercises(ru, lesson, 1, 'tiles')
       expect(ex.length).toBeLessThanOrEqual(14)
       expect(ex.filter((e) => e.kind === 'choice').length).toBeLessThanOrEqual(4)
       expect(ex.filter((e) => e.kind === 'listening').length).toBeLessThanOrEqual(2)
@@ -224,6 +225,19 @@ describe('difficulty ramp', () => {
       for (const e of generateLessonExercises(ru, lesson, 3, 'typing')) kinds.add(e.kind)
     }
     expect(kinds.has('typing')).toBe(true)
+  })
+
+  it('opens a first pass with the letters the lesson introduces, then teaches the words', () => {
+    if (!lesson) throw new Error('fixture lesson missing')
+    const ex = generateLessonExercises(ru, lesson, 0, 'letters')
+    const intro = ex.filter((e) => e.kind === 'choice' && (e.title === 'New letter' || e.title === 'Letters'))
+    expect(intro.length).toBeGreaterThan(0)
+    expect(ex.slice(0, intro.length)).toEqual(intro)
+    // once met, a letter is never introduced again by a later lesson
+    const later = ru.units[0].skills[0].lessons[1]
+    const laterIntro = generateLessonExercises(ru, later, 0, 'letters').filter((e) => e.kind === 'choice' && e.title === 'New letter')
+    const firstLetters = new Set(intro.filter((e) => e.kind === 'choice' && e.title === 'New letter').map((e) => e.kind === 'choice' && e.prompt[0]))
+    for (const e of laterIntro) if (e.kind === 'choice') expect(firstLetters.has(e.prompt[0])).toBe(false)
   })
 
   it('shows a first-time learner every recognition exercise before any production one', () => {

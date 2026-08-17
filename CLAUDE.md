@@ -51,19 +51,23 @@ npm run gen-audio    # pre-generate MP3s (python scripts/gen-audio.py)
   looking broken. `scripts/check-audio.py` runs in `deploy.sh` and fails the build if
   any speakable text lacks an MP3; `splitSentences`/`splitWords` in
   `src/content/sentences.ts` have Python twins there and must stay in sync.
-- **Production follows the learner's stage, never a lesson's replay count** —
-  `src/engine/production-stage.ts`: `letters` (Russian until Unit 0, the alphabet, is
-  done) = complete a shown word (`spell` with `shown`/blanks ≤ 2), word chips, cloze
-  options — never a whole word, never a text input; `tiles` (alphabet done) = whole
-  words from tiles; `typing` (alphabet + units 1–2 done, and crown ≥ 2 for that
-  lesson) = text input. One rule for lessons (`generateLessonExercises(..., stage)`),
-  Practice (`review-exercise.ts`: typing only at `typing` stage AND word `known`),
-  the alphabet drills (never typed) and the AI topic/scenario generators (take
-  `stage`). `no-typing-early.test.tsx` renders every beginner lesson at every crown
-  and asserts zero text inputs — keep it passing.
-- Alphabet = path Unit 0 for Russian: `ALPHABET_DRILL_IDS` (one per letter group +
-  confusables) are the first nodes on `PathScreen`, deep-link to `/alphabet/:drillId`,
-  and gate "First words". Older per-level ids (`alpha-<group>-L1..3`) still count.
+- **Letters are taught inside the lessons, step by step** — `src/engine/production-stage.ts`
+  `letterSchedule(course)`: in path order each Russian lesson introduces ≤ 6 letters of
+  its own vocab not yet met (leftovers spill to the next lesson; rare ё/щ/ц arrive in
+  later units). `LessonScreen` shows a "New letters in this lesson" card before a first
+  pass, `letterExercises` opens the lesson with them (letter → sound with example word,
+  sound → letter among letters met so far), `PathScreen` lists them under each node.
+  The Alphabet tab is extra practice only (its group drills also count letters as met).
+- **Production follows the learner's stage, never a lesson's replay count**:
+  `letters` (until every letter scheduled in units 1–2 is met) = complete a shown word
+  (`spell` with `shown`/blanks ≤ 2, blanks drawn from letters already met), word chips,
+  cloze options — never a whole word, never a text input; `tiles` = whole words from
+  tiles; `typing` (units 1–2 done, and crown ≥ 2 for that lesson) = text input. One
+  rule for lessons (`generateLessonExercises(..., stage)`), Practice
+  (`review-exercise.ts`: typing only at `typing` stage AND word `known`), the alphabet
+  drills (never typed) and the AI topic/scenario generators (take `stage`).
+  `no-typing-early.test.tsx` renders every beginner lesson at every crown and asserts
+  zero text inputs — keep it passing.
 - First pass through a lesson (`crownLevel === 0`) and every pass at the `letters`
   stage is ordered, not shuffled: `TEACHING_ORDER` in `exercise-gen.ts` puts
   recognition before production.

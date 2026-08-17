@@ -1,4 +1,13 @@
-# Round 4 — 2026-08-17: beginners never write whole words; alphabet is Unit 0
+# Round 4b — 2026-08-17: alphabet embedded in the lessons (Victor: "not a Unit 0 — step by step inside the normal lessons")
+
+- [x] `letterSchedule(course)`: ≤6 new letters per lesson from its own vocab, path order, spill-over
+- [x] `letterExercises` open a first pass (letter→sound w/ example, sound→letter among met letters); pre-lesson "New letters" card; path node subtitle
+- [x] `letters` stage until every letter scheduled in units 1–2 met; missing-letter blanks drawn from met letters
+- [x] Unit 0 removed from the path; Alphabet tab = extra practice (still counts letters)
+- [x] tests 406 pass; Playwright walk local (lesson 1 opens with П Р И В Е Т, 0 inputs through letters/tiles; typing at typing stage crown 2)
+- [ ] deploy + verify live
+
+# Round 4 — 2026-08-17: beginners never write whole words; alphabet is Unit 0 (superseded same day by 4b)
 
 Complaint (3rd time): "guessing a letter or two is ok, not writing whole words in
 beginner lessons — and the alphabet learning isn't incorporated at all".

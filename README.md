@@ -35,12 +35,13 @@ The two things that make a phone harder than a laptop are handled explicitly:
   device still makes no sound — no Russian voice installed, silent switch on —
   tapping the speaker reveals the text instead of leaving you stuck on an
   exercise you cannot hear.
-- **Order, and no keyboard until you're ready.** Russian starts with Unit 0, the
-  Cyrillic alphabet, right on the path. Until it's done, no exercise asks for a
-  whole word: you meet a word, recognise it, complete one or two missing letters,
-  build sentences from word chips. After the alphabet, whole words from letter
-  tiles. Typing arrives only once units 1–2 are behind you and a lesson is on its
-  third pass (and in Practice, only for words you already know) — the same rule
+- **Letters first, inside the lessons.** Every Russian lesson opens with the few
+  new Cyrillic letters its words need (sound, example word, audio), so the alphabet
+  arrives step by step over the first units. Until those letters are all met, no
+  exercise asks for a whole word: you recognise it, complete one or two missing
+  letters, build sentences from word chips. Then whole words from letter tiles.
+  Typing arrives only once units 1–2 are behind you and a lesson is on its third
+  pass (and in Practice, only for words you already know) — the same rule
   everywhere, including the AI lessons.
 
 ## Run
