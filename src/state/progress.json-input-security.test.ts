@@ -140,7 +140,8 @@ describe('importData/exportData/loadForProfile JSON security', () => {
         extras: big,
       })
       expect(() => mod.useProgress.getState().importData(payload)).not.toThrow()
-      expect(mod.useProgress.getState().importData(payload)).toBe(false)
+      expect(mod.useProgress.getState().importData(payload)).toBe(true)
+      expect(mod.useProgress.getState().data).not.toHaveProperty('extras')
     })
 
     it('tolerates a ~5MB valid payload without crashing or memory issues', () => {
