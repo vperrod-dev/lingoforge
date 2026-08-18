@@ -128,6 +128,15 @@ describe('useProgress importData / exportData', () => {
     }
   })
 
+  it('strips unknown top-level fields from an imported backup instead of persisting them raw', () => {
+    const valid = JSON.parse(readFixture('valid-full.json'))
+    const withJunk = { ...valid, __proto__evil: 'nope', injectedField: { nested: true } }
+
+    expect(mod.useProgress.getState().importData(JSON.stringify(withJunk))).toBe(true)
+    expect(mod.useProgress.getState().data).toEqual(valid)
+    expect(mod.useProgress.getState().data).not.toHaveProperty('injectedField')
+  })
+
   it('rejects JSON with wrong types for required top-level fields', () => {
     const base = {
       xp: minNumber(0),

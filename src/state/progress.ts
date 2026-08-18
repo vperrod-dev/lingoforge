@@ -230,7 +230,7 @@ export const useProgress = create<ProgressState>()((set, get) => {
       try {
         const parsed: unknown = JSON.parse(json)
         if (!isProgressData(parsed)) return false
-        update(() => parsed)
+        update(() => progressDataSchema.parse(parsed))
         return true
       } catch {
         return false
